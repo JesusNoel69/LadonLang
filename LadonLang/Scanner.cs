@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Xml.Schema;
 
 namespace LadonLang
@@ -76,76 +77,95 @@ namespace LadonLang
             col=0;
             state=0;
             for(int i=0; i<input.Length;i++){
-                if(CharIn(_delimiters,input[i])){
-                    col=0;
-                }else if(CharIn(_symbols,input[i])){
-                    col=1;
-                }else if(CharIn(_digits,input[i])){
-                    col=2;
-                }else if(CharIn(['"'],input[i])){
-                    col=3;
-                }else if(CharIn(['.'],input[i])){
-                    col=4;
-                }else if(CharIn(['A'],input[i])){
-                    col=5;
-                }else if(CharIn(['n'],input[i])){
-                    col=6;
-                }else if(CharIn(['y'],input[i])){
-                    col=7;
-                }else if(CharIn(['F'],input[i])){
-                    col=8;
-                }else if(CharIn(['N'],input[i])){
-                    col=9;
-                }else if(CharIn(['G'],input[i])){
-                    col=10;
-                }else if(CharIn(['o'],input[i])){
-                    col=11;
-                }else if(CharIn(['I'],input[i])){
-                    col=12;
-                }else if(CharIn(['d'],input[i])){
-                    col=13;
-                }else if(CharIn(['e'],input[i])){
-                    col=14;
-                }else if(CharIn(['x'],input[i])){
-                    col=15;
-                }else if(CharIn(['t'],input[i])){
-                    col=16;
-                }else if(CharIn(['i'],input[i])){
-                    col=17;
-                }else if(CharIn(['r'],input[i])){
-                    col=18;
-                }else if(CharIn(['s'],input[i])){
-                    col=19;
-                }else if(CharIn(['L'],input[i])){
-                    col=20;
-                }else if(CharIn(['g'],input[i])){
-                    col=21;
-                }else if(CharIn(['p'],input[i])){
-                    col=22;
-                }else if(CharIn(['u'],input[i])){
-                    col=23;
-                }else if(CharIn(['m'],input[i])){
-                    col=24;
-                }else if(CharIn(['R'],input[i])){
-                    col=25;
-                }else if(CharIn(['a'],input[i])){
-                    col=26;
-                }else if(CharIn(['S'],input[i])){
-                    col=27;
-                }else if(CharIn(['D'],input[i])){
-                    col=28;
-                }else if(CharIn(['f'],input[i])){
-                    col=29;
-                }else if(CharIn(['u'],input[i])){
-                    col=30;
-                }else if(CharIn(['U'],input[i])){
-                    col=31;
-                }else if(CharIn(['W'],input[i])){
-                    col=32;
-                }
+                col=SetColumn(col,input, i);
                 state=Matrix[state][col];
-                System.Console.WriteLine($"state{state} y col{col}");
+                Console.WriteLine($"state{state} y col{col}");
+                if(ErrorHandler(state)){
+                   break;
+                }
+            }      
+        }
+        public static int SetColumn(int col, string input, int i){
+            if(CharIn(_delimiters,input[i])){
+                col=0;
+            }else if(CharIn(_symbols,input[i])){
+                col=1;
+            }else if(CharIn(_digits,input[i])){
+                col=2;
+            }else if(CharIn(['"'],input[i])){
+                col=3;
+            }else if(CharIn(['.'],input[i])){
+                col=4;
+            }else if(CharIn(['A'],input[i])){
+                col=5;
+            }else if(CharIn(['n'],input[i])){
+                col=6;
+            }else if(CharIn(['y'],input[i])){
+                col=7;
+            }else if(CharIn(['F'],input[i])){
+                col=8;
+            }else if(CharIn(['N'],input[i])){
+                col=9;
+            }else if(CharIn(['G'],input[i])){
+                col=10;
+            }else if(CharIn(['o'],input[i])){
+                col=11;
+            }else if(CharIn(['I'],input[i])){
+                col=12;
+            }else if(CharIn(['d'],input[i])){
+                col=13;
+            }else if(CharIn(['e'],input[i])){
+                col=14;
+            }else if(CharIn(['x'],input[i])){
+                col=15;
+            }else if(CharIn(['t'],input[i])){
+                col=16;
+            }else if(CharIn(['i'],input[i])){
+                col=17;
+            }else if(CharIn(['r'],input[i])){
+                col=18;
+            }else if(CharIn(['s'],input[i])){
+                col=19;
+            }else if(CharIn(['L'],input[i])){
+                col=20;
+            }else if(CharIn(['g'],input[i])){
+                col=21;
+            }else if(CharIn(['p'],input[i])){
+                col=22;
+            }else if(CharIn(['u'],input[i])){
+                col=23;
+            }else if(CharIn(['m'],input[i])){
+                col=24;
+            }else if(CharIn(['R'],input[i])){
+                col=25;
+            }else if(CharIn(['a'],input[i])){
+                col=26;
+            }else if(CharIn(['S'],input[i])){
+                col=27;
+            }else if(CharIn(['D'],input[i])){
+                col=28;
+            }else if(CharIn(['f'],input[i])){
+                col=29;
+            }else if(CharIn(['u'],input[i])){
+                col=30;
+            }else if(CharIn(['U'],input[i])){
+                col=31;
+            }else if(CharIn(['W'],input[i])){
+                col=32;
             }
+            return col;
+        }
+        public static bool ErrorHandler(int state){
+            if(state<0){
+                if(state==-1)
+                    Console.WriteLine("error al formar numeros enteros");
+                else if(state==-2)
+                    Console.WriteLine("error al formar numeros reales");
+                else if(state==-3)
+                    Console.WriteLine("Error al formar cadenas");
+                return true; //hay un error
+            }
+            return false;//no hay error
         }
         public static bool CharIn(char[] alphabet, char character){
             for(int j=0; j<alphabet.Length; j++){

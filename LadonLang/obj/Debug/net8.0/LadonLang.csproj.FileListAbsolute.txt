@@ -12,3 +12,4 @@ C:\Users\hp\Documents\Proyectos\Language Programing\LadonLang\obj\Debug\net8.0\r
 C:\Users\hp\Documents\Proyectos\Language Programing\LadonLang\obj\Debug\net8.0\LadonLang.pdb
 C:\Users\hp\Documents\Proyectos\Language Programing\LadonLang\obj\Debug\net8.0\LadonLang.genruntimeconfig.cache
 C:\Users\hp\Documents\Proyectos\Language Programing\LadonLang\obj\Debug\net8.0\ref\LadonLang.dll
+C:\Users\hp\Documents\Proyectos\Language Programing\LadonLang\obj\Debug\net8.0\LadonLang.sourcelink.json
