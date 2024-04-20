@@ -1,11 +1,15 @@
 ﻿using LadonLang;
-//Console.WriteLine(TransitionMatrix.Matrix[0][2]);
-// string? input = Console.ReadLine();
-string? line;
+string? line, lineLower;
 int numLine=1;
 StreamReader archive = new StreamReader(@"C:/Users/hp/Documents/Proyectos/Language Programing/LadonLang/Archives/Initial.ll");
 while((line = archive.ReadLine())!= null){
-    Console.WriteLine(line);
-    Scanner.Scan(line,numLine);
-    numLine++;
+
+    lineLower=line.ToLower();
+    Scanner.Scan(line,lineLower,numLine++);
 }
+Console.WriteLine("=======");
+foreach (var item in Scanner.tokenVector)
+{
+    item.Listar();
+}
+
