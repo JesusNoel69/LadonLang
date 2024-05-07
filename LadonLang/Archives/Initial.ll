@@ -27,4 +27,10 @@ go s;
 ItEr;
 it2r;
 i d;
-my@var;
+my/v;
+---
+m**m;
+m==2;
+---
+1-2;
+n;

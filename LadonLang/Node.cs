@@ -1,19 +1,13 @@
 namespace LadonLang
 {
-    public class Node
+    public class Node(int id, string token, string tipoToken, int lineas)
     {
-        public Node(int id, string token, string tipoToken, int lineas){
-            this.idNodo=id;
-            this.token=token;
-            this.nLineas=lineas;
-            this.tipoToken=tipoToken;
-        }
-        public int idNodo;
-        public string token;
-        public string tipoToken;
-        public int nLineas;
+        public int idNodo = id;
+        public string token = token;
+        public string tipoToken = tipoToken;
+        public int nLineas = lineas;
         public void Listar(){
-            Console.WriteLine($"Id: {idNodo}\nToken: {token}\nTipo de token: {tipoToken}\nNumero de linea: {nLineas}\n---");
+            Console.WriteLine($"Id: {idNodo}\nToken: {token}\nTipo de token: {tipoToken}\nNumero de linea: {nLineas}\n--------------------------------------------------");
         }
     }
 }

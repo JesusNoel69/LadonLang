@@ -1,15 +1,20 @@
 ﻿using LadonLang;
 string? line, lineLower;
 int numLine=1;
+bool next=true;
+
 StreamReader archive = new StreamReader(@"C:/Users/hp/Documents/Proyectos/Language Programing/LadonLang/Archives/Initial.ll");
-while((line = archive.ReadLine())!= null){
-
+while((line = archive.ReadLine())!= null && next==true){
     lineLower=line.ToLower();
-    Scanner.Scan(line,lineLower,numLine++);
+    next=Lexer.Scan(line,lineLower,numLine++);
 }
-Console.WriteLine("=======");
-foreach (var item in Scanner.tokenVector)
-{
-    item.Listar();
+if(next){
+    List<Node> tokenVector = Lexer.GetTokenVector();
+    Console.WriteLine("Vector de tokens");
+    Console.WriteLine("=======");
+    foreach (var token in tokenVector)
+    {
+        token.Listar();
+    }
+    Console.WriteLine("=======");
 }
-
