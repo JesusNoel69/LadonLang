@@ -22,6 +22,7 @@ namespace LadonLang.Data
             MTHAN='>',
             DOT='.',
             OPTIONAL='?',
-            COMMA=','
+            COMMA=',',
+            DDOT=':'
         }
 }

@@ -9,18 +9,16 @@ namespace LadonLang
         private static char[] _symbols = ['A',
         'b', 'B', 'c', 'C', 'D','E', 'F', 'G', 'h', 'H', 'I', 'j', 'J', 'k', 'K',
         'L', 'M','N','O','p','P', 'q', 'Q','R', 'S' ,'T','U', 'v', 'V', 'w', 'X','Y', 'z', 'Z','_'];
-        private static char[] _delimiters=['-', ';',',','[', ']','(',')','#','=','+','%','&','/','|','*','!',' ', '@']; //---
+        private static char[] _delimiters=['-', ';',',','[', ']','(',')','#','=','+','%','&','/','|','*','!',' ', '@',':','<','>','.','\n',' ']; //---
         private static int _col=0;
         private static int _state=0;
         private static string _token="";
         private static string _typeToken="";
         private static List<Node> _tokenVector = [];
         public static List<Node> GetTokenVector(){
-            _tokenVector=ImprovedTokenVector();
-            return _tokenVector;
+            return ImprovedTokenVector();
         }
         private static int _id=0;
-        //ToDo: los -200 de la columna de las cadenas ver si se reemplazan por el error de formar cadenas
         public static bool Scan(string? inputNormal, string? input,int numLine){ //input es lower
             ResetTokenInfo();
             
@@ -31,7 +29,6 @@ namespace LadonLang
                 _token+=inputNormal[i];  
                 if(!AcceptanceHandler(_state)) _state=TransitionMatrix.Matrix[_state][_col];
                 else _state=0;
-                //Console.WriteLine(_state);
                 if(ErrorHandler(_state)) return false;
                 if(_delimiters.Contains(input[i])){ //si el ultmo caracter es un delimitador
                     if (!string.IsNullOrEmpty(_token) && _state!=5 )//verifica que no se anulo y que no pertencezca a las cadena el estado
@@ -55,10 +52,6 @@ namespace LadonLang
                         if(last!=' '){ //last!=" " && last!=""
                             _tokenVector.Add(new Node(_id++,last.ToString(),DelimiterType(last),numLine));
                         }
-                        // _token = "";
-                        // _state=0;
-                        // _col=0;//
-                        // _typeToken="";//
                         ResetTokenInfo();
                     }
                 }   
@@ -66,7 +59,7 @@ namespace LadonLang
             return true;
         }
         
-        private static readonly char[] _composedOperands=['-','=','+','%','&','/','|','*']; //---
+        private static readonly char[] _composedOperands=['-','=','+','%','&','/','|','*','<','>']; //---
 
         public static List<Node> ImprovedTokenVector(){
             List<Node> auxToken =[];
@@ -81,14 +74,14 @@ namespace LadonLang
                 val = _tokenVector[i].token[0].ToString() + _tokenVector[i+1].token[0].ToString()+_tokenVector[i+2].token[0].ToString();
                 i+=2;
                 // Console.WriteLine(val);
-                auxToken.Add(new Node(j,val,"Context_Token",_tokenVector[i].nLineas));
+                auxToken.Add(new Node(j,val,"CONTEXT_TOKEN",_tokenVector[i].nLineas));
                 }else{
                     if(Array.Exists(_composedOperands, elemento => elemento == _tokenVector[i].token[0])
                     &&Array.Exists(_composedOperands, elemento => elemento == _tokenVector[i+1].token[0])
                     && _tokenVector[i].token.Length==1){
                         val = _tokenVector[i].token[0].ToString() + _tokenVector[i+1].token[0].ToString();
                         i++;
-                        // Console.WriteLine(val);
+                        Console.WriteLine(val);
                         auxToken.Add(new Node(j,val,ComposedOperators.TypeComposedOperator(val),_tokenVector[i].nLineas));
                     }else{
                         auxToken.Add(new Node(j,_tokenVector[i].token,_tokenVector[i].tipoToken,_tokenVector[i].nLineas));
@@ -100,28 +93,29 @@ namespace LadonLang
         }
 
         public static string DelimiterType(char character){
-            if(character==((char)DelimiterSymbols.EQUAL)) return "Equal";
-            if(character==((char)DelimiterSymbols.CPARENTHESIS)) return "Close_Parenthesis";
-            if(character==((char)DelimiterSymbols.OPARENTHESIS)) return "Open_Parenthesis";
-            if(character==((char)DelimiterSymbols.OCORCHETES)) return "Open_Corchetes";
-            if(character==((char)DelimiterSymbols.CCORCHETES)) return "Close_Corchetes";
-            if(character==((char)DelimiterSymbols.OKEY)) return "Open_Key";
-            if(character==((char)DelimiterSymbols.CKEY)) return "Close_Key";
-            if(character==((char)DelimiterSymbols.ASTERSIC)) return "Asterisc";
-            if(character==((char)DelimiterSymbols.SLASH)) return "Slash";
-            if(character==((char)DelimiterSymbols.PERCENT)) return "Percent";
-            if(character==((char)DelimiterSymbols.MINUS)) return "Minus";
-            if(character==((char)DelimiterSymbols.PLUS)) return "Plus";
-            if(character==((char)DelimiterSymbols.SHARP)) return "Sharp";
-            if(character==((char)DelimiterSymbols.DIFFERENT)) return "Different";
-            if(character==((char)DelimiterSymbols.SEMICOLON)) return "Semicolon";
-            if(character==((char)DelimiterSymbols.OR)) return "Or";
-            if(character==((char)DelimiterSymbols.AND)) return "And";
-            if(character==((char)DelimiterSymbols.lTHAN)) return "Less_Than";
-            if(character==((char)DelimiterSymbols.MTHAN)) return "More_Than";
-            if(character==((char)DelimiterSymbols.DOT)) return "Dot";
-            if(character==((char)DelimiterSymbols.OPTIONAL)) return "Optional";
-            if(character==((char)DelimiterSymbols.COMMA)) return "Comma";
+            if(character==((char)DelimiterSymbols.EQUAL)) return "EQUAL";
+            if(character==((char)DelimiterSymbols.CPARENTHESIS)) return "CLOSE_PARENTHESIS";
+            if(character==((char)DelimiterSymbols.OPARENTHESIS)) return "OPEN_PARENTHESIS";
+            if(character==((char)DelimiterSymbols.OCORCHETES)) return "OPEN_CORCHETES";
+            if(character==((char)DelimiterSymbols.CCORCHETES)) return "CLOSE_CORCHETES";
+            if(character==((char)DelimiterSymbols.OKEY)) return "OPEN_KEY";
+            if(character==((char)DelimiterSymbols.CKEY)) return "CLOSE_KEY";
+            if(character==((char)DelimiterSymbols.ASTERSIC)) return "ASTERISK";
+            if(character==((char)DelimiterSymbols.SLASH)) return "SLASH";
+            if(character==((char)DelimiterSymbols.PERCENT)) return "PERCENT";
+            if(character==((char)DelimiterSymbols.MINUS)) return "MINUS";
+            if(character==((char)DelimiterSymbols.PLUS)) return "PLUS";
+            if(character==((char)DelimiterSymbols.SHARP)) return "SHARP";
+            if(character==((char)DelimiterSymbols.DIFFERENT)) return "DIFFERENT";
+            if(character==((char)DelimiterSymbols.SEMICOLON)) return "SEMICOLON";
+            if(character==((char)DelimiterSymbols.OR)) return "OR";
+            if(character==((char)DelimiterSymbols.AND)) return "AND";
+            if(character==((char)DelimiterSymbols.lTHAN)) return "LESS_THAN";
+            if(character==((char)DelimiterSymbols.MTHAN)) return "MORE_THAN";
+            if(character==((char)DelimiterSymbols.DOT)) return "DOT";
+            if(character==((char)DelimiterSymbols.OPTIONAL)) return "OPTIONAL";
+            if(character==((char)DelimiterSymbols.COMMA)) return "COMMA";
+            if(character==((char)DelimiterSymbols.DDOT)) return "DOUBLE_DOT";
             return "Undefined"; 
         }
         public static int SetColumn(int _col, string input, int i){
@@ -151,7 +145,6 @@ namespace LadonLang
             else if(_digits.Contains(input[i])) _col=2;
             return _col;
         }
-        //ToDo: verificar que lo errores correspondan y ver si es necesario el usar un enum para definirlos
         public static bool ErrorHandler(int _state){
             if(_state<0){
                     if(_state==-1) Console.WriteLine("Error al formar numeros enteros");
@@ -165,26 +158,27 @@ namespace LadonLang
         }
         public static bool AcceptanceHandler(int _state){
             if(_state>=99){
-                if(_state==100) _typeToken="Identifier";
-                else if(_state==200) _typeToken="Number";
-                else if(_state==300) _typeToken="Decimal_Number";
-                else if(_state==400) _typeToken="String";
-                else if(_state==500) _typeToken="Any";
-                else if(_state==600) _typeToken="Default";
+                if(_state==100) _typeToken="IDENTIFIER";
+                else if(_state==200) _typeToken="NUMBER";
+                else if(_state==300) _typeToken="DECIMAL_NUMBER";
+                else if(_state==400) _typeToken="STRING";
+                else if(_state==500) _typeToken="ANY";
+                else if(_state==600) _typeToken="DEFAULT";
                 else if(_state==700) _typeToken="FN";
                 else if(_state==800) _typeToken="GO";
                 else if(_state==900) _typeToken="IF";
-                else if(_state==1000) _typeToken="Index";
-                else if(_state==1100) _typeToken="IndexFirst";
-                else if(_state==1200) _typeToken="Iter";
-                else if(_state==1300) _typeToken="Long";
-                else if(_state==1400) _typeToken="Loop";
-                else if(_state==1500) _typeToken="Num";
-                else if(_state==1600) _typeToken="Read";
-                else if(_state==1700) _typeToken="Str";
-                else if(_state==1800) _typeToken="Url";
-                else if(_state==1900) _typeToken="Write";
-                else if(_state==2000) _typeToken="Entity";
+                else if(_state==1000) _typeToken="INDEX";
+                else if(_state==1100) _typeToken="INDEXFIRST";
+                else if(_state==1200) _typeToken="ITER";
+                else if(_state==1300) _typeToken="LONG";
+                else if(_state==1400) _typeToken="LOOP";
+                else if(_state==1500) _typeToken="NUM";
+                else if(_state==1600) _typeToken="READ";
+                else if(_state==1700) _typeToken="STR";
+                else if(_state==1800) _typeToken="URL";
+                else if(_state==1900) _typeToken="WRITE";
+                else if(_state==2000) _typeToken="ENTITY";
+                else if(_state==2100) _typeToken="OUT";
                 return true; //estado final
             }
             return false; //aun no es estado final

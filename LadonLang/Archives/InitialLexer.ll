@@ -34,3 +34,7 @@ m==2;
 ---
 1-2;
 n;
+FN n(Num paremeter1, Out outIdentifier)
+---
+    Go;
+---

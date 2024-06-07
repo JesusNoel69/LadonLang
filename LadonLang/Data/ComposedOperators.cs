@@ -14,18 +14,18 @@ namespace LadonLang.Data
         public const string EQUALLESS = "<=";
         public const string EQUALDIFFERENT = "!=";
         public static string TypeComposedOperator(string type){
-            if(type==DASTERISC) return "Double_Asterisc";
-            if(type==DEQUAL) return "Double_Equal";
-            if(type==DMINUS) return "Double_Minus";
-            if(type==DPLUS) return "Double_Plus";
-            if(type==EQUALPLUS) return "Equal_Plus";
-            if(type==EQUALMINUS) return "Equal_Minus";
-            if(type==EQUALSLASH) return "Equal_Slash";
-            if(type==EQUALASTERISC) return "Equal_Asterisc";
-            if(type==EQUALMORE) return "More_Than_Equal";
-            if(type==EQUALLESS) return "Less_Than_Equal";
-            if(type==EQUALDIFFERENT) return "Different_Equal";
-            return "Undefined";
+            if(type==DASTERISC) return "DOUBLE_ASTERISK";
+            if(type==DEQUAL) return "DOUBLE_EQUAL";
+            if(type==DMINUS) return "DOUBLE_MINUS";
+            if(type==DPLUS) return "DOUBLE_PLUS";
+            if(type==EQUALPLUS) return "EQUAL_PLUS";
+            if(type==EQUALMINUS) return "EQUAL_MINUS";
+            if(type==EQUALSLASH) return "EQUAL_SLASH";
+            if(type==EQUALASTERISC) return "EQUAL_ASTERISK";
+            if(type==EQUALMORE) return "MORE_THAN_EQUAL";
+            if(type==EQUALLESS) return "LESS_THAN_EQUAL";
+            if(type==EQUALDIFFERENT) return "DIFFERENT_EQUAL";
+            return "UNDEFINED";
         }
     }
 }

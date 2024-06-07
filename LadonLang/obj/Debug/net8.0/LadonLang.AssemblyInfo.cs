@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LadonLang")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+022e28fa834aa2d1f05b7c8f87895952a89943b9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9eb19c28170a4b947c9cfa57e3e70f653ed40f59")]
 [assembly: System.Reflection.AssemblyProductAttribute("LadonLang")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LadonLang")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
