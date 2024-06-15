@@ -1,4 +1,5 @@
 ﻿using LadonLang;
+using LadonLang.Data;
 string? line, lineLower;
 int numLine=1;
 bool next=true;
@@ -31,4 +32,6 @@ if(next){
         //     Console.WriteLine(); // asegura una nueva línea despues de la impresion de cada expresion
         // }
     System.Console.WriteLine("terminado");
+
+    ASTNode ast=AstConstructor.getAst(tokenVector);
 }
