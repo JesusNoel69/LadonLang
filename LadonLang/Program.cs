@@ -1,5 +1,5 @@
 ﻿using LadonLang;
-using LadonLang.Data;
+using LadonLangAST;
 string? line, lineLower;
 int numLine=1;
 bool next=true;
@@ -31,7 +31,12 @@ if(next){
         //     statement.Print();
         //     Console.WriteLine(); // asegura una nueva línea despues de la impresion de cada expresion
         // }
-    System.Console.WriteLine("terminado");
-
-    ASTNode ast=AstConstructor.getAst(tokenVector);
+    Console.WriteLine("=======");
+    AstConstructor ast = new(tokenVector);
+    ast.Start(tokenVector);
+    Console.WriteLine(ast.root.Count+" hola");
+    foreach(var t in ast.root){
+        t.Print();
+    }
+    // ast._tokenVector.ForEach(x=>System.Console.WriteLine( x.tipoToken));
 }

@@ -1,43 +1,58 @@
 using LadonLang.Data;
-namespace LadonLang
+using LadonLang;
+//Todo: todos los bloques de cada contexto deberia ser una lista, para guardar instrucciones al mismo nivel
+namespace LadonLangAST
 {
-    public class AstConstructor
+    public class AstConstructor(List<Node> tokenVector)
     {
-        public static int _index = 0;
-        public static NodeToParser token =new();
-        // public static string beforeToken =null;
+        public  int _index = 0;
+        public NodeToParser token =new();     
+        public  List<Node> _tokenVector = tokenVector;
+        
+        public  List<ASTNode> root = [];
+        // public  ASTNode? blocks;
 
-        public static List<Node> _tokenVector = [];
-        public static List<ASTNode> root = [];
-        public static ASTNode? blocks;
-
-        public static List<ASTNode> getAst(List<Node> tokenVector){
+        public  List<ASTNode> GetAst(){
             return root;
         }
-        public static void Advance()
+        public  void Advance()
         {
-            _index++;
             if (_index < _tokenVector.Count)
             {
-                Console.WriteLine(token);
+                
                 token.TypeToken = _tokenVector[_index].tipoToken;
                 token.ValueToken = _tokenVector[_index].token;
-                // if(_index>=1){
-                //     beforeToken = _tokenVector[_index-1].tipoToken;
-                // }
-
-            }
-            else
-            {
-                System.Console.WriteLine(token);
+                _index++;
+                // System.Console.WriteLine(token.TypeToken+"el valor del advance");
             }
         }
-        public static ASTNode Statements(){
+        public  void Retreat()
+        {
+            if (_index > 0)
+            {
+                _index--;//
 
+                token.TypeToken = _tokenVector[_index].tipoToken;
+                token.ValueToken = _tokenVector[_index].token;
+
+
+            }
+        }
+        public void Start(List<Node> tokenVector)
+        {
+            if (_tokenVector.Count > 0)
+            {
+                Statements();
+            }
+        }
+        public  ASTNode? Statements(){
+            _tokenVector.Insert(0,new(-1,"@","PRINCIPAL_CONTEXT",1));
+
+            ASTNode? blocks=null;
             while (_index < _tokenVector.Count){
 
+                blocks=null;
                 if(token.TypeToken=="OPEN_CORCHETES"){
-                    blocks=null;
                     Advance();//skip [
                     if(token.TypeToken=="IF"){
                         blocks=If();
@@ -53,79 +68,149 @@ namespace LadonLang
                     }
                 }else  if(token.TypeToken=="FN"){
                     blocks=Function();
-                }else {
+                }else if(token.TypeToken=="IDENTIFIER"||token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"||token.TypeToken=="STR"){
                     blocks=Declare();
+                }else if(token.TypeToken=="@"){
+                    blocks=RootCase();
                 }
-                root.Add(blocks);
-                return blocks;
+                if(blocks!=null){
+                    root.Add(blocks);
+                    blocks=null;
+                }
+                Advance();
+
             }
-            return null;
-            
-
+            return blocks;
         }
-
-        
-        public static IfNode If(){
-            //ToDo: ver si necesita borrarse cada vez antes de enviar
+        // public int countGlobal=0;
+        public  ASTNode? ReturnBlock(){
+            ASTNode? blocks=null;
+            if(token.TypeToken=="OPEN_CORCHETES"){
+                Advance();//skip [
+                if(token.TypeToken=="IF"){
+                    blocks=If();
+                }
+                else  if(token.TypeToken=="LOOP"){
+                    blocks=Loop();
+                }else  if(token.TypeToken=="READ"){
+                    blocks=InPut();
+                }else  if(token.TypeToken=="WRITE"){
+                    blocks=OutPut();
+                }else  if(token.TypeToken=="ENTITY"){
+                    blocks=Entity();
+                }
+            }else  if(token.TypeToken=="FN"){
+                blocks=Function();
+            }else if(token.TypeToken=="IDENTIFIER"||token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"||token.TypeToken=="STR"){
+                blocks=Declare();
+            }
+            return blocks;
+        }
+        public PrincipalContextNode RootCase()
+        {
+            PrincipalContextNode principalContextNode=new();
+            Advance();//skip @
+            principalContextNode.PrincipalBlock?.Add(ReturnBlock());
+            return principalContextNode;
+        }
+        public  IfNode If(){
             IfNode _if = new();
-            // _if=new();
             Advance(); //skip IF
             Advance();//skip :
             Advance();//skip (
-            while(token.TypeToken!="CLOSE_CORCHETES" && token.TypeToken!="SHARP"){//condition
-                _if.Condition.Add(token);
+            while(token.TypeToken!="CLOSE_PARENTHESIS" && token.TypeToken!="SHARP"){//condition
+                _if.Condition.Add(new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    });
                 Advance();
+                
             }
+            Advance();//skip )
             if(token.TypeToken=="SHARP"){
                 Advance();
-                _if.Name=token;
+                _if.Name=new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    };
+                Advance();
             }
             Advance();//skip ]
             Advance();//skip ---
-            _if.IfBlock = Statements(); 
-            Advance();//skip ---
-            Advance();//skip [
-            Advance();//skip :
-            Advance();//skip ]
-            Advance();//skip ---
-            _if.ElseBlock = Statements();
-            Advance();//skip ---
+            while(token.TypeToken!="CONTEXT_TOKEN"){
+                _if.IfBlock?.Add(ReturnBlock());
+                Advance();//skip ---
+
+            }
+
             return _if;
         }
-        public static LoopNode Loop(){
+        public  LoopNode Loop(){
             LoopNode loop = new();
             Advance();//skip Loop
             if(token.TypeToken=="DOUBLE_DOT"){
                 Advance(); //skip :
                 Advance(); //skip INDEX
                 Advance(); //skip =
-                loop.Index=token;
+                loop.Index=new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    };
                 Advance(); //skip ,
                 Advance(); //skip ITER
                 Advance(); //skip =
-                loop.Iter=token;
+                //ToFuckingDo: cambiar token por un un nuevo nodeToParser para que no haga referencia al mismo objeto token sino uno nuevo como el siguiente
+                loop.Iter=new NodeToParser  //token
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    };
             }
             if(token.TypeToken=="SHARP"){
                 Advance();//skip #
-                loop.Name=token;
+                loop.Name=new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    };
+
             }
             Advance();//skip ---
             loop.Block=Statements();
             Advance();//skip ---
             return loop;
         }
-        public static FunctionNode Function(){
+        public  FunctionNode Function(){
             FunctionNode function = new();
             Advance();//skip FN
-            function.Name=token;
+            function.Name=new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    };
             Advance();//skip (
             Parameter parameter = new();
             while(token.TypeToken!="OUT"&&token.TypeToken!="CLOSE_CORCHETES"){
-                parameter.Type=token;
+                parameter.Type=new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    };
                 Advance();
-                parameter.ParameterName=token;
+                parameter.ParameterName=new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    };
                 Advance();
-                function.ParameterList.Add(parameter);
+                //parameter
+                function.ParameterList.Add(new Parameter{
+                    ParameterName=parameter.ParameterName,
+                    Type=parameter.Type
+                });
             }
             Advance();//skip )
             Advance();//skip ---
@@ -133,14 +218,18 @@ namespace LadonLang
             Advance();//skip ---
             return function;
         }
-        public static InOutPutNode InPut(){
+        public  InOutPutNode InPut(){
             //[Read(“entrada”):Url=docUrl];
             //[Read(“entrada”)];
             InOutPutNode input=new();
             Advance();//skip READ        
             Advance();//skip (
             while(token.TypeToken!="CLOSE_PARENTHESIS"){
-                input.Value.Add(token);
+                input?.Value?.Add(new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    });
                 Advance();
             }
             Advance();//skip )
@@ -148,21 +237,30 @@ namespace LadonLang
                 Advance(); //skip :
                 Advance(); //skip URL
                 Advance(); //skip =
-                input.Url=token;
+                if(input!=null)
+                    input.Url=new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    };
                 Advance();
             }            
             Advance();//skip ]    
             Advance();//skip ;    
             return input;
         }
-        public static InOutPutNode OutPut(){
+        public  InOutPutNode OutPut(){
             //[Write(“message”)];
             //[Write : Url=docUrl];
             InOutPutNode output=new();
             Advance(); //skip WRITE
             if(token.TypeToken=="OPEN_PARENTHESIS"){
                 Advance();//skip (
-                output.Value.Add(token);
+                output?.Value?.Add(new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    });
                 Advance();
                 Advance();//skip )
             }
@@ -170,14 +268,19 @@ namespace LadonLang
                 Advance(); //skip :
                 Advance(); //skip URL
                 Advance(); //skip =
-                output.Url=token;
+                if(output!=null)
+                output.Url=new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    };
                 Advance();
             }
             Advance(); //skip ]
             Advance(); //skip ;
             return output;
         }
-        public static EntityNode Entity(){
+        public  EntityNode Entity(){
             //[Entity #name]
             // ---
             //                 Str identifier;
@@ -185,7 +288,11 @@ namespace LadonLang
             EntityNode entity = new();
             Advance(); //skip ENTITY
             Advance(); //skip #
-            entity.Name=token;
+            entity.Name=new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    };
             Advance();
             Advance();//skip ]
             Advance(); // skip ---
@@ -193,14 +300,18 @@ namespace LadonLang
             Advance(); // skip ---
             return entity;
         }
-        public static FlowNode Flow(){
+        public  FlowNode Flow(){
             //Go;
             //Go # name;
             Advance();//skip GO
             FlowNode flow = new();
             if(token.TypeToken=="SHARP"){
                 Advance();//skip #
-                flow.Identifier = token;
+                flow.Identifier = new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    };
                 Advance();
             }
             Advance();//skip ;
@@ -208,23 +319,31 @@ namespace LadonLang
         }
 
         ////
-       public static bool ParenthesisCompare(ExpressionNode expression)
+       public  bool ParenthesisCompare(ExpressionNode expression)
         {
             if (token.TypeToken == "OPEN_PARENTHESIS")
             {
-                expression.OParenthesis = token;
+                expression.OParenthesis = new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    };
                 Advance(); // skip '('
                 expression.Left = Expression();
                 if (token.TypeToken == "CLOSE_PARENTHESIS")
                 {
-                    expression.CParenthesis = token;
+                    expression.CParenthesis = new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    };
                     Advance(); // skip ')'
                 }
                 return true;
             }
             return false;
         }
-        public static ExpressionNode Expression()
+        public  ExpressionNode Expression()
         {
             ExpressionNode expression = new ExpressionNode();
             string[] delimiters = [ "DOUBLE_ASTERISK", "DOUBLE_EQUAL", "DOUBLE_MINUS", "DOUBLE_PLUS", "EQUAL_PLUS",
@@ -236,18 +355,30 @@ namespace LadonLang
                 if (!ParenthesisCompare(expression))
                 {
                     // Left operand
-                    ExpressionNode leftNode = new ExpressionNode { Operator = token };
+                    ExpressionNode leftNode = new ExpressionNode { Operator = new NodeToParser
+                        {
+                            TypeToken = token.TypeToken,
+                            ValueToken = token.ValueToken
+                        }};
                     Advance();
                     if (token != null && !Array.Exists(delimiters, element => element == token.TypeToken))
                     {
                         // Operator
-                        NodeToParser operatorToken = token;
+                        NodeToParser operatorToken = new()
+                        {
+                                TypeToken = token.TypeToken,
+                                ValueToken = token.ValueToken
+                            };
                         Advance();
                         // Right operand
-                        ExpressionNode rightNode = new ExpressionNode { Operator = token};
+                        ExpressionNode rightNode = new ExpressionNode { Operator = new NodeToParser
+                            {
+                                TypeToken = token.TypeToken,
+                                ValueToken = token.ValueToken
+                            }};
                         Advance();
                         // Create a subexpression node
-                        ExpressionNode subExpression = new ExpressionNode
+                        ExpressionNode subExpression = new()
                         {
                             Left = leftNode,
                             Operator = operatorToken,
@@ -265,20 +396,29 @@ namespace LadonLang
             return expression;
         }
         //////
-        public static DeclarationNode Declare(){
+        public  DeclarationNode Declare(){
             DeclarationNode declaration = new DeclarationNode(); 
             string[] asignSymbols = [ "DOUBLE_ASTERISK", "DOUBLE_MINUS", "DOUBLE_PLUS", "EQUAL_PLUS",
                                     "EQUAL_SLASH", "EQUAL_ASTERISK"];
             if(token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"
             ||token.TypeToken=="STR")
             {
-                declaration.Type=token;
+                declaration.Type=new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    };
                 Advance();
             }
             while(token.TypeToken=="IDENTIFIER"){
                 AssigmentNode assigment = new();
-                Identifier identifier = new(){
-                    Name = token
+                Identifier identifier = new()
+                {
+                    Name = new NodeToParser
+                        {
+                            TypeToken = token.TypeToken,
+                            ValueToken = token.ValueToken
+                        }
                 };
                 Advance();
                 //NUM n.index.iter
@@ -286,11 +426,17 @@ namespace LadonLang
                 AddPropertieToIdentifier(ref identifier);
                 if(Array.Exists(asignSymbols, symbol => symbol == token.TypeToken)){
                     declaration.Identifier = identifier;
-                    assigment = new();
-                    identifier = new(){
-                        Name = token
+                    assigment = new()
+                    {
+                        // identifier = new(){
+                        //     Name = token
+                        // };
+                        Symbol = new NodeToParser
+                            {
+                                TypeToken = token.TypeToken,
+                                ValueToken = token.ValueToken
+                            }
                     };
-                    assigment.Symbol=token;
                     Advance();
                     if(token.TypeToken=="IDENTIFIER"){
                         AddPropertieToIdentifier(ref identifier );
@@ -307,23 +453,35 @@ namespace LadonLang
             Advance(); //skip ;
             return declaration;
         }
-        public static void AddPropertieToIdentifier(ref Identifier identifier){
+        public  void AddPropertieToIdentifier(ref Identifier identifier){
             while(token.TypeToken=="DOT"){
                 Advance();
-                identifier.Properties.Add(token);
+                identifier?.Properties?.Add(new NodeToParser
+                    {
+                        TypeToken = token.TypeToken,
+                        ValueToken = token.ValueToken
+                    });
                 Advance();
             }
         }
-        public static void AssigmentOfFunctionCall(ref AssigmentNode assigment){
+        public  void AssigmentOfFunctionCall(ref AssigmentNode assigment){
             if(token.TypeToken=="OPEN_PARENTHESIS"){
                 Advance();
                 if(token.TypeToken!="OPEN_PARENTHESIS"){
                     assigment.Parameters.Add(new (){
-                        Name=token
+                        Name=new NodeToParser
+                            {
+                                TypeToken = token.TypeToken,
+                                ValueToken = token.ValueToken
+                            }
                     });
                     Advance();
                     while(token.TypeToken=="COMMA"){
-                        assigment.Parameters.Add(new(){Name = token});
+                        assigment.Parameters.Add(new(){Name = new NodeToParser
+                            {
+                                TypeToken = token.TypeToken,
+                                ValueToken = token.ValueToken
+                            }});
                         Advance();
                     }
                 }
@@ -332,16 +490,3 @@ namespace LadonLang
         }
     }
 }
-
-
-
-
-
-/*
-Num n.Index=2, r.n, n=r;
-Str d=n(2,3,n);
-n=2;
-n;
-n();
-r=d();
-*/

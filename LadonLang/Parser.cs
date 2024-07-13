@@ -1,5 +1,3 @@
-using System.Data;
-using System.Net.Http.Headers;
 using LadonLang.Data;
 
 namespace LadonLang
@@ -15,21 +13,6 @@ namespace LadonLang
         public static string beforeToken = "";
         public static string afterToken = "";
 
-        //
-        // private static EntityNode _entity=new();
-        // private static IfNode _if=new();
-        // private static LoopNode _cycle=new();
-        // private static FunctionNode _function=new();
-        // public static InOutPutNode _data  = new();
-        // public static FlowNode _flow = new();
-        // public static DeclarationNode _declaration = new();
-        // public static ExpressionNode _expression = new();
-
-        // public static ASTNode node;
-
-        // public static List<ASTNode> ASTNodes=[];
-        //
-
         public static void Advance()
         {
             _index++;
@@ -44,8 +27,8 @@ namespace LadonLang
                 if(_index>=1){
                     beforeToken = _tokenVector[_index-1].tipoToken;
                     //
-                    _currentToken.ValueToken = _tokenVector[_index].token;
-                    _currentToken.TypeToken = _tokenVector[_index].tipoToken;
+                    _beforeToken.ValueToken = _tokenVector[_index].token;
+                    _beforeToken.TypeToken = _tokenVector[_index].tipoToken;
                     //
                 }
                 if(_index<_tokenVector.Count-1){
@@ -62,7 +45,7 @@ namespace LadonLang
         public static void Structure(List<Node> tokenVector)
         {
             _tokenVector = tokenVector;
-            _index = 0; // Reset index to start parsing from the beginning
+            _index = 0; // reiniciar el indice al inicio
             if (_tokenVector.Count > 0)
             {
                 token = _tokenVector[_index].tipoToken;
@@ -70,66 +53,50 @@ namespace LadonLang
             }
         }
 
+        public static bool StatementsBody(){
+            if(Declaration()){
+                if(token=="SEMICOLON"){
+                    Advance();
+                    StatementsBody();
+                    return true;
+                }else{
+                    throw new Exception("Error. se esperaba un ;");
+                }
+            }else if (token == "FN")
+            {
+                Function();
+                return true;
+            }else if(token=="OPEN_CORCHETES"){
+                Advance();
+                if(Cycle()||OutPut()||If() || InPut()||Entity()||Else()){  
+                    return true; 
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
         public static void Statements()
         {
             while (_index < _tokenVector.Count)
             {
-                if(Declaration()){
-                    if(token=="SEMICOLON"){
-                        Advance();
-                        Statements();
-                    }else{
-                        throw new Exception("Error. se esperaba un ;");
-                    }
-                }else if (token == "FN")
-                {
-                    Function();
-                }else if(token=="OPEN_CORCHETES"){
-                    Advance();
-                    // if(!OutPut()){
-                    //     if(!If()){
-                    //         if(!InPut()){
-                    //             if(!Entity()){
-                    //                 Cycle();
-                    //             }
-                    //         }
-                    //     }
-                    // }
-                    if(Cycle()){
-                        //guardar
-                       // ASTNodes.Add(_cycle);
-                        //reiniciar
-                       // _cycle=new();
-                    }else if(OutPut()){
-
-                    }else if(If()){
-                        
-                    }else if(InPut()){
-                        
-                    }else if(Entity()){
-
-                    }
-                    Statements();//posiblemente no lo necesite, ya que el while actua como si se llamara a statements
-                    
-                }
-                else
-                {
+                if(!StatementsBody()){
                     break;
                 }
             }
         }
-//
-        public static bool Variable()//ref List<NodeToParser> ValuesList
+        public static bool Variable()
         {
             //Avanza dentro de atributeAccess
             if(token == "IDENTIFIER" ){                
-                if(AtributeAccess()){//ref ValuesList
+                if(AtributeAccess()){
                     return true;
                 }
 
             }else if (token == "NUMBER" || token == "DECIMAL_NUMBER" || token =="STRING") ///token == "IDENTIFIER" || 
             {
-                // ValuesList.Add(_currentToken);
                 Advance();
                 return true;
             }
@@ -151,25 +118,23 @@ namespace LadonLang
             }
             return false;
         }
-    public static bool AtributeAccess(){//ref List<NodeToParser> ValuesList
+    public static bool AtributeAccess(){
         if(token=="IDENTIFIER"){
-            // ValuesList.Add(_currentToken);
             Advance();
             if(token=="DOT"){
                 Advance();
-                AtributeAccessPrime();//ref ValuesList
+                AtributeAccessPrime();
                 return true;
             }else{return true;}
         }
         return true;
     }
-    public static void AtributeAccessPrime(){//ref List<NodeToParser> ValuesList
+    public static void AtributeAccessPrime(){
         if(token=="IDENTIFIER"){
-            // ValuesList.Add(_currentToken);
             Advance();
             if(token=="DOT"){
                 Advance();
-                // AtributeAccessPrime(ref ValuesList);
+
             }else{
                 // AtributeAccessPrime(ref ValuesList);
             }
@@ -177,13 +142,11 @@ namespace LadonLang
     }
 
     public static bool Entity(){
-                    // System.Console.WriteLine("entity "+token);
         if(token=="ENTITY"){
             Advance();
             if(token=="SHARP"){
                 Advance();
                 if(token=="IDENTIFIER"){
-                    // _entity.Name=_currentToken;
                     Advance();
                     if(token=="CLOSE_CORCHETES"){
                         Advance();
@@ -201,18 +164,13 @@ namespace LadonLang
         }
         return false;
     }
-    //
         public static bool InPut(){
             if(token=="READ"){
                 Advance();
 
                 if(token=="OPEN_PARENTHESIS"){
                     Advance();
-                    //
-                    // List<NodeToParser> valueInOutPut=[];
-                    if(Variable() || token=="CLOSE_PARENTHESIS"){ //ref valueInOutPut
-                        // _data.Value=valueInOutPut;
-                        //
+                    if(Variable() || token=="CLOSE_PARENTHESIS"){
                         if(token=="CLOSE_PARENTHESIS"){
                             Advance();
                             if(token=="DOUBLE_DOT"){
@@ -222,7 +180,6 @@ namespace LadonLang
                                     if(token=="EQUAL"){
                                         Advance();
                                         if(token=="STRING"||token =="IDENTIFIER"){
-                                            // _data.Url=_currentToken;
                                             Advance();
                                             if(token=="CLOSE_CORCHETES"){
                                                 Advance();
@@ -274,7 +231,6 @@ namespace LadonLang
                         if(token=="EQUAL"){
                             Advance();
                             if(token=="STRING" || token == "IDENTIFIER"){
-                                // _data.Url=_currentToken;
                                 Advance();
                                 if(token=="CLOSE_CORCHETES"){
                                     Advance();
@@ -298,18 +254,13 @@ namespace LadonLang
                     }    
                         
                 }else if(token=="OPEN_PARENTHESIS"){
-                    Advance();//
-                    //
-                    // List<NodeToParser> valueInOutPut=[];
-                    if(Variable()){//ref valueInOutPut
-                        // _data.Value=valueInOutPut;
-                        //
+                    Advance();
+                    if(Variable()){
                         if(token=="CLOSE_PARENTHESIS"){
                             Advance();
                             if(token=="CLOSE_CORCHETES"){
                                 Advance();
                                 if(token=="SEMICOLON"){
-                                    //agregar a la lista principal(statements) y verificar que se borran en todos
                                     Advance();
                                     return true;
                                 }else{
@@ -333,16 +284,11 @@ namespace LadonLang
                 if(token=="SHARP"){
                     Advance();
                     if(token=="IDENTIFIER"){
-                        // _flow.Identifier = _currentToken;
                         Advance();
                         return true;
                     }else{throw new Exception("Error. Se esperaba un identificador");}
                 }else{
-                    // if(token=="SEMICOLON"){
-                    //     System.Console.WriteLine("hola");
-                    // }
                     return true;
-
                 }
             }else return false;
         }
@@ -350,9 +296,7 @@ namespace LadonLang
         public static bool Declaration(){
 
             if(Type()){
-                // _declaration.Type = _beforeToken;
                 if(token == "IDENTIFIER"){
-                    // _declaration.Identifier.Add(_currentToken) ;
                     AssignValue();
                     return true;
                 }
@@ -393,8 +337,7 @@ namespace LadonLang
                 if(Expression()){
                     AssignValue();
                 }
-            }else if(token=="IDENTIFIER"){ //en vez de IDENTIFIER
-                // _declaration.Identifier.Add(_currentToken);
+            }else if(token=="IDENTIFIER"){
                 Advance();
                 AssignValue();
             }else if(token=="COMMA"){
@@ -456,15 +399,9 @@ namespace LadonLang
         {
             if (token == "PLUS" || token == "MINUS")
             {
-                // _expression.Left=_beforeToken;
-                // _expression.Operator = _currentToken;
-                // _expression.Value.Add(_expression.Left);
-                // _expression.Value.Add(_expression.Operator);
                 Advance();
                 if (Term())
                 {
-                    // _expression.Right=_currentToken;
-                    // _expression.Value.Add(_expression.Right);
                     return ExpressionPrime();
                 }
                 return false;
@@ -485,15 +422,9 @@ namespace LadonLang
         {
             if (token == "ASTERISK" || token == "SLASH")
             {
-                // _expression.Left=_beforeToken;
-                // _expression.Operator = _currentToken;
-                // _expression.Value.Add(_expression.Left);
-                // _expression.Value.Add(_expression.Operator);
                 Advance();
                 if (Factor())
                 {
-                    // _expression.Right=_currentToken;
-                    // _expression.Value.Add(_expression.Right);
                     return TermPrime();
                 }
                 return false;
@@ -537,13 +468,12 @@ namespace LadonLang
                 Advance();
                 if (token == "IDENTIFIER")
                 {
-                    // _function.Name=_currentToken;
                     Advance();
                     if (token == "OPEN_PARENTHESIS")
                     {
                         Advance();
-                        ParameterList();//
-                        FunctionOut();//
+                        ParameterList();
+                        FunctionOut();
                         if (token == "CLOSE_PARENTHESIS")
                         {
                             Advance();
@@ -581,17 +511,12 @@ namespace LadonLang
                 }
             }
         }
-//parameter_list se mantiene
         public static void ParameterList()
         {
             if (Type())
             {
                 if (token == "IDENTIFIER")
                 {
-                    // _function.ParameterList.Add(new(){
-                    //     Type = _beforeToken,
-                    //     ParameterName = _currentToken
-                    // });
                     Advance();
                     ParameterListPrime();
                 }
@@ -610,10 +535,6 @@ namespace LadonLang
                 {
                     if (token == "IDENTIFIER")
                     {
-                        // _function.ParameterList.Add(new(){
-                        //     Type = _beforeToken,
-                        //     ParameterName = _currentToken
-                        // });
                         Advance();
                         ParameterListPrime();////////funcionaba sin estar esta instruccion
                     }
@@ -633,7 +554,6 @@ namespace LadonLang
                 Advance();
                 if (token == "IDENTIFIER")
                 {
-                    // _function.ReturnValue = _currentToken;
                     Advance();
                 }
                 else
@@ -664,101 +584,121 @@ namespace LadonLang
             }
             return false;
         }
-        public static bool If(){//
-            if (token == "IF"){
+        public static bool If()
+        {
+            if (token == "IF")
+            {
                 Advance();
-                if(token=="DOUBLE_DOT"){
+                if (token == "DOUBLE_DOT")
+                {
                     Advance();
-                    if(token=="OPEN_PARENTHESIS"){
+                    if (token == "OPEN_PARENTHESIS")
+                    {
                         Advance();
-                        if(Condition()){//
-                            // Advance();
-                            if(token=="CLOSE_PARENTHESIS"){
+                        if (Condition())
+                        {
+                            if (token == "CLOSE_PARENTHESIS")
+                            {
                                 Advance();
-                                //
-                                // NodeToParser temp=new();
-                                // NameOptional(ref temp);
-                                // _if.Name=temp;
-                                //
-                                if(token=="CLOSE_CORCHETES"){
+                                NameOptional();
+                                if (token == "CLOSE_CORCHETES")
+                                {
                                     Advance();
-                                    if(token=="CONTEXT_TOKEN"){
+                                    if (token == "CONTEXT_TOKEN")
+                                    {
                                         Advance();
-                                        Statements(); //falta el ifblock
-                                        if(token=="CONTEXT_TOKEN"){
+                                        StatementsBody();
+                                        System.Console.WriteLine("mi valor es: "+token);
+                                        if (token == "CONTEXT_TOKEN")
+                                        {
                                             Advance();
-                                            Else();//falta el eseblock
-                                            return true; //
-                                        }else{
-                                            throw new Exception("Error. Se esperaba un ---"); 
+                                            //Else();
+                                            StatementsBody();
+                                            
                                         }
-                                    }else{
-                                        throw new Exception("Error. Se esperaba un ---"); 
+                                        else
+                                        {
+                                            throw new Exception("Error. Se esperaba un ---");
+                                        }
                                     }
-                                }else{
-                                    throw new Exception("Error. Se esperaba un ] "); 
+                                    else
+                                    {
+                                        throw new Exception("Error. Se esperaba un ---");
+                                    }
                                 }
-                            }else{
-                                throw new Exception("Error. Se esperaba un ) despues de la condicion kuiijhui"); 
+                                else
+                                {
+                                    throw new Exception("Error. Se esperaba un ]");
+                                }
+                            }
+                            else
+                            {
+                                throw new Exception("Error. Se esperaba un ) después de la condición");
                             }
                         }
-                    }else{
-                        throw new Exception("Error. Se esperaba un ( depues de : "); 
                     }
-                }else{
-                    throw new Exception("Error. Se esperaban : depues del if");
+                    else
+                    {
+                        throw new Exception("Error. Se esperaba un ( después de :");
+                    }
+                }
+                else
+                {
+                    throw new Exception("Error. Se esperaba un : después del if");
                 }
             }
-            return false;            
-        }        
-        public static void Else(){//ter
-            if(token == "OPEN_CORCHETES"){
-                // _if.ElseStatements.OpenCorchetes = _currentToken;
-                Advance();
-                if(token=="DOUBLE_DOT"){
-                    // _if.ElseStatements.DoubleDotToken = _currentToken;
-                    Advance();
-                    if(token=="CLOSE_CORCHETES"){
-                        // _if.ElseStatements.CloseCorchetes = _currentToken;
-                        Advance();
-                        if(token=="CONTEXT_TOKEN"){
-                            // _if.ElseStatements.StartContextToken = _currentToken;
-                            Advance();
-                            Statements();
-                            if(token=="CONTEXT_TOKEN"){
-                                // _if.ElseStatements.EndContextToken = _currentToken;
-                                Advance();
-                            }else{
-                                throw new Exception("Error. Se esperaba un ---"); 
-                            }
-                        }else{
-                            throw new Exception("Error. Se esperaba un --- despues de ]"); 
-                        }
-                    }else{
-                        throw new Exception("Error. Se esperaba un ] despues de :"); 
-                    }
-                }else{
-                    throw new Exception("Error. Se esperaba un : despued de ["); 
-                }
-            }else{
-                Advance();//
-            }
+            return false;
         }
+        public static bool Else(){
+            // if (token == "OPEN_CORCHETES")
+            // {
+            //     Advance();
+                if (token == "DOUBLE_DOT")
+                {
+                    Advance();
+                    if (token == "CLOSE_CORCHETES")
+                    {
+                        Advance();
+                        if (token == "CONTEXT_TOKEN")
+                        {
+                            Advance();
+                            StatementsBody();
+                            if (token == "CONTEXT_TOKEN")
+                            {
+                                Advance();
+                                return true;
+                            }
+                            else
+                            {
+                                throw new Exception("Error. Se esperaba un ---");
+                            }
+                        }
+                        else
+                        {
+                            throw new Exception("Error. Se esperaba un ---");
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception("Error. Se esperaba un ] después de :");
+                    }
+                // }
+               
+            }
+            return false;
+        }
+        
+       
         public static bool Condition(){
-
             if(Val()){
-                // _if.Condition.Add(_beforeToken);
                 return ConditionPrime();
             }else{
                 throw new Exception("Error. se esperaba algun numero, cadena o identificador");
             }
-
-            // return false;
         }
-        private static bool ConditionPrime(){//ter
-            if(LogicOperator()){//
-                if(Val()){     //
-                    // _if.Condition.Add(_beforeToken);
+        private static bool ConditionPrime(){
+            if(LogicOperator()){
+                if(Val()){
                     return ConditionPrime();
                 }else{
                     throw new Exception("Error. se esperaba algun numero, cadena o identificador");
@@ -768,9 +708,8 @@ namespace LadonLang
             return true;
         }
         public static bool LogicOperator(){//
-            string[] op = ["OR","AND", "LESS_THAN", "MORE_THAN", "LESS_THAN_EQUAL", "MORE_THAN_EQUAL"];
+            string[] op = ["OR","AND", "LESS_THAN", "MORE_THAN", "LESS_THAN_EQUAL", "MORE_THAN_EQUAL","DOUBLE_EQUAL"];
             if(op.Contains(token)){
-                // _if.Condition.Add(_currentToken);
                 Advance();
                 return true;
             }
@@ -784,37 +723,32 @@ namespace LadonLang
             }
             return false;
         }
-        public static void NameOptional(){//ref NodeToParser Data
+        public static void NameOptional(){
             if(token=="SHARP"){
                 Advance();
                 if(token=="IDENTIFIER"){
-                    // Data = _currentToken;
                     Advance();
                 }else{ throw new Exception("Error. se esperaba un nombre para identificar la estructura");}
             }else if(token=="IDENTIFIER"){
                 throw new Exception("Error. se esperaba un #");
-            }else{
-                Advance();    
             }
+            // else{
+            //     Advance();    
+            // }
         }
         
         //Loop
-        public static bool Cycle(){ //ter
+        public static bool Cycle(){ 
             if(token=="LOOP"){
                 Advance();
                 OptionalPropertiesLoop();
-                // NodeToParser temp=new();
-                NameOptional();//ref temp
-                // _cycle.Name = temp;
+                NameOptional();
                 if(token=="CLOSE_CORCHETES"){
-                    // _cycle.CloseCorchetes=_currentToken;
                     Advance();
                     if(token=="CONTEXT_TOKEN"){
-                        // _cycle.StartContextToken = _currentToken;
                         Advance();
                         Statements();
                         if(token=="CONTEXT_TOKEN"){
-                        // _cycle.EndContextToken = _currentToken;
                             Advance();
                             return true;
                         }else{
@@ -828,23 +762,18 @@ namespace LadonLang
                 }
             }return false;
         }
-        public static void OptionalPropertiesLoop(){//ter
+        public static void OptionalPropertiesLoop(){
             if(token=="DOUBLE_DOT"){
                 Advance();
                 if(token=="INDEX"){
                     Advance();
-                    // NodeToParser index=new();
-                    if(AssignPropertyValue()){//ref index
-                        // _cycle.Index = index;
+                    if(AssignPropertyValue()){
                         if(token=="COMMA"){
                             Advance();
                             if(token=="ITER"){
                                 Advance();
-                                NodeToParser iter=new();
-                                if(!AssignPropertyValue()){//ref iter
+                                if(!AssignPropertyValue()){
                                     throw new Exception("Error. Se esperaba la asignacion de un valor para Iter");
-                                }else{
-                                    // _cycle.Iter = iter;
                                 }
                             }else{
                                 throw new Exception("Error. Se esperaba un Iter despues de ,");
@@ -860,11 +789,10 @@ namespace LadonLang
                 }
             }
         }
-        public static bool AssignPropertyValue(){ //ref NodeToParser property
+        public static bool AssignPropertyValue(){
             if(token=="EQUAL"){
                 Advance();
                 if(Val()){
-                    // property=_currentToken;
                     return true;
                 }else{
                     throw new Exception("Error. Se esperaba un valor");
