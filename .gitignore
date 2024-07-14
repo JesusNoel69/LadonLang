@@ -1,0 +1,15 @@
+# Ignore all bin and obj folders
+bin/
+obj/
+
+# Ignore all dll and exe files
+*.dll
+*.exe
+*.pdb
+
+# Ignore cache files
+*.cache
+
+# Ignore all word temporal files
+~*
+*.tmp
