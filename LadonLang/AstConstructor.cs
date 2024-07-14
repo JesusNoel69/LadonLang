@@ -70,27 +70,32 @@ namespace LadonLangAST
                     blocks=Function();
                 }else if(token.TypeToken=="IDENTIFIER"||token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"||token.TypeToken=="STR"){
                     blocks=Declare();
-                }else if(token.TypeToken=="@"){
+                }else if(token.TypeToken=="GO"){
+                    blocks = Flow();
+                }
+                else if(token.TypeToken=="@"){
                     blocks=RootCase();
                 }
                 if(blocks!=null){
                     root.Add(blocks);
                     blocks=null;
                 }
+                //al ejecutar una instruccion este salta el context-token y le permite avanzar
                 Advance();
-
             }
             return blocks;
         }
         // public int countGlobal=0;
         public  ASTNode? ReturnBlock(){
             ASTNode? blocks=null;
+
             if(token.TypeToken=="OPEN_CORCHETES"){
                 Advance();//skip [
                 if(token.TypeToken=="IF"){
                     blocks=If();
                 }
                 else  if(token.TypeToken=="LOOP"){
+                    System.Console.WriteLine("--------------------- "+ token.ValueToken);
                     blocks=Loop();
                 }else  if(token.TypeToken=="READ"){
                     blocks=InPut();
@@ -103,6 +108,8 @@ namespace LadonLangAST
                 blocks=Function();
             }else if(token.TypeToken=="IDENTIFIER"||token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"||token.TypeToken=="STR"){
                 blocks=Declare();
+            }else if(token.TypeToken=="GO"){
+                blocks = Flow();
             }
             return blocks;
         }
@@ -129,7 +136,7 @@ namespace LadonLangAST
             }
             Advance();//skip )
             if(token.TypeToken=="SHARP"){
-                Advance();
+                Advance();//skip #
                 _if.Name=new NodeToParser
                     {
                         TypeToken = token.TypeToken,
@@ -142,9 +149,7 @@ namespace LadonLangAST
             while(token.TypeToken!="CONTEXT_TOKEN"){
                 _if.IfBlock?.Add(ReturnBlock());
                 Advance();//skip ---
-
             }
-
             return _if;
         }
         public  LoopNode Loop(){
@@ -159,15 +164,16 @@ namespace LadonLangAST
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
+                Advance();
                 Advance(); //skip ,
                 Advance(); //skip ITER
                 Advance(); //skip =
-                //ToFuckingDo: cambiar token por un un nuevo nodeToParser para que no haga referencia al mismo objeto token sino uno nuevo como el siguiente
-                loop.Iter=new NodeToParser  //token
+                loop.Iter=new NodeToParser
                     {
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
+                Advance();
             }
             if(token.TypeToken=="SHARP"){
                 Advance();//skip #
@@ -176,11 +182,15 @@ namespace LadonLangAST
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
-
+                    Advance();
             }
+
+            Advance();//skip ]
             Advance();//skip ---
-            loop.Block=Statements();
-            Advance();//skip ---
+            while(token.TypeToken!="CONTEXT_TOKEN"){
+                loop.Block?.Add(ReturnBlock());
+                Advance();//skip ---
+            }
             return loop;
         }
         public  FunctionNode Function(){
@@ -191,31 +201,45 @@ namespace LadonLangAST
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
+            Advance();
             Advance();//skip (
             Parameter parameter = new();
-            while(token.TypeToken!="OUT"&&token.TypeToken!="CLOSE_CORCHETES"){
+            while(token.TypeToken!="OUT"&&token.TypeToken!="CLOSE_PARENTHESIS"){
                 parameter.Type=new NodeToParser
                     {
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
-                Advance();
+                Advance();//skip type
                 parameter.ParameterName=new NodeToParser
                     {
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
-                Advance();
+                Advance();//skip name
+                if(token.TypeToken=="COMMA"){
+                    Advance();//skip ,
+                }
                 //parameter
                 function.ParameterList.Add(new Parameter{
                     ParameterName=parameter.ParameterName,
                     Type=parameter.Type
                 });
             }
+            if(token.TypeToken=="OUT"){
+                Advance();//skip OUT
+                function.ReturnValue=new(){
+                    TypeToken=token.TypeToken,
+                    ValueToken = token.ValueToken
+                };
+                Advance();//skip name
+            }
             Advance();//skip )
             Advance();//skip ---
-            function.Block=Statements();
-            Advance();//skip ---
+            while(token.TypeToken!="CONTEXT_TOKEN"){
+                function.Block?.Add(ReturnBlock());
+                Advance();//skip ---
+            }
             return function;
         }
         public  InOutPutNode InPut(){
@@ -296,8 +320,10 @@ namespace LadonLangAST
             Advance();
             Advance();//skip ]
             Advance(); // skip ---
-            entity.Block = Statements();
-            Advance(); // skip ---
+            while(token.TypeToken!="CONTEXT_TOKEN"){
+                entity.Block?.Add(ReturnBlock());
+                Advance(); // skip ---
+            }
             return entity;
         }
         public  FlowNode Flow(){
@@ -312,9 +338,10 @@ namespace LadonLangAST
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
-                Advance();
+                    flow.Exist=false;
+                Advance();//skip name
             }
-            Advance();//skip ;
+            // Advance();//skip ;
             return flow;
         }
 

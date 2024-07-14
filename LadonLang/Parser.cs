@@ -309,7 +309,6 @@ namespace LadonLang
                 AssignValue();
                 return true;
             }else if(FlowControl()){
-
                     return true;
             }
             return false;
