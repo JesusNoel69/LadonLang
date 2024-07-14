@@ -68,9 +68,11 @@ namespace LadonLangAST
                     }
                 }else  if(token.TypeToken=="FN"){
                     blocks=Function();
-                }else if(token.TypeToken=="IDENTIFIER"||token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"||token.TypeToken=="STR"){
-                    blocks=Declare();
-                }else if(token.TypeToken=="GO"){
+                }
+                // else if(token.TypeToken=="IDENTIFIER"||token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"||token.TypeToken=="STR"){
+                //     blocks=Declare();
+                // }
+                else if(token.TypeToken=="GO"){
                     blocks = Flow();
                 }
                 else if(token.TypeToken=="@"){
@@ -106,9 +108,11 @@ namespace LadonLangAST
                 }
             }else  if(token.TypeToken=="FN"){
                 blocks=Function();
-            }else if(token.TypeToken=="IDENTIFIER"||token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"||token.TypeToken=="STR"){
-                blocks=Declare();
-            }else if(token.TypeToken=="GO"){
+            }
+            // else if(token.TypeToken=="IDENTIFIER"||token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"||token.TypeToken=="STR"){
+            //     blocks=Declare();
+            // }
+            else if(token.TypeToken=="GO"){
                 blocks = Flow();
             }
             return blocks;
@@ -348,174 +352,7 @@ namespace LadonLangAST
         }
 
         ////
-       public  bool ParenthesisCompare(ExpressionNode expression)
-        {
-            if (token.TypeToken == "OPEN_PARENTHESIS")
-            {
-                expression.OParenthesis = new NodeToParser
-                    {
-                        TypeToken = token.TypeToken,
-                        ValueToken = token.ValueToken
-                    };
-                Advance(); // skip '('
-                expression.Left = Expression();
-                if (token.TypeToken == "CLOSE_PARENTHESIS")
-                {
-                    expression.CParenthesis = new NodeToParser
-                    {
-                        TypeToken = token.TypeToken,
-                        ValueToken = token.ValueToken
-                    };
-                    Advance(); // skip ')'
-                }
-                return true;
-            }
-            return false;
-        }
-        public  ExpressionNode Expression()
-        {
-            ExpressionNode expression = new ExpressionNode();
-            string[] delimiters = [ "DOUBLE_ASTERISK", "DOUBLE_EQUAL", "DOUBLE_MINUS", "DOUBLE_PLUS", "EQUAL_PLUS",
-                                    "EQUAL_MINUS", "EQUAL_SLASH", "EQUAL_ASTERISK", "MORE_THAN_EQUAL", "LESS_THAN_EQUAL",
-                                    "DIFFERENT_EQUAL", "SEMICOLON", "CLOSE_CORCHETES" ];
-
-            while (token != null && !Array.Exists(delimiters, element => element == token.TypeToken))
-            {
-                if (!ParenthesisCompare(expression))
-                {
-                    // Left operand
-                    ExpressionNode leftNode = new ExpressionNode { Operator = new NodeToParser
-                        {
-                            TypeToken = token.TypeToken,
-                            ValueToken = token.ValueToken
-                        }};
-                    Advance();
-                    if (token != null && !Array.Exists(delimiters, element => element == token.TypeToken))
-                    {
-                        // Operator
-                        NodeToParser operatorToken = new()
-                        {
-                                TypeToken = token.TypeToken,
-                                ValueToken = token.ValueToken
-                            };
-                        Advance();
-                        // Right operand
-                        ExpressionNode rightNode = new ExpressionNode { Operator = new NodeToParser
-                            {
-                                TypeToken = token.TypeToken,
-                                ValueToken = token.ValueToken
-                            }};
-                        Advance();
-                        // Create a subexpression node
-                        ExpressionNode subExpression = new()
-                        {
-                            Left = leftNode,
-                            Operator = operatorToken,
-                            Right = rightNode
-                        };
-                        expression.SubExpressions.Add(subExpression);
-                    }
-                    else
-                    {
-                        // If we don't have a complete subexpression, add just the left node
-                        expression.SubExpressions.Add(leftNode);
-                    }
-                }
-            }
-            return expression;
-        }
         //////
-        public  DeclarationNode Declare(){
-            DeclarationNode declaration = new DeclarationNode(); 
-            string[] asignSymbols = [ "DOUBLE_ASTERISK", "DOUBLE_MINUS", "DOUBLE_PLUS", "EQUAL_PLUS",
-                                    "EQUAL_SLASH", "EQUAL_ASTERISK"];
-            if(token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"
-            ||token.TypeToken=="STR")
-            {
-                declaration.Type=new NodeToParser
-                    {
-                        TypeToken = token.TypeToken,
-                        ValueToken = token.ValueToken
-                    };
-                Advance();
-            }
-            while(token.TypeToken=="IDENTIFIER"){
-                AssigmentNode assigment = new();
-                Identifier identifier = new()
-                {
-                    Name = new NodeToParser
-                        {
-                            TypeToken = token.TypeToken,
-                            ValueToken = token.ValueToken
-                        }
-                };
-                Advance();
-                //NUM n.index.iter
-                //NUM n.n.iter=0,m,r
-                AddPropertieToIdentifier(ref identifier);
-                if(Array.Exists(asignSymbols, symbol => symbol == token.TypeToken)){
-                    declaration.Identifier = identifier;
-                    assigment = new()
-                    {
-                        // identifier = new(){
-                        //     Name = token
-                        // };
-                        Symbol = new NodeToParser
-                            {
-                                TypeToken = token.TypeToken,
-                                ValueToken = token.ValueToken
-                            }
-                    };
-                    Advance();
-                    if(token.TypeToken=="IDENTIFIER"){
-                        AddPropertieToIdentifier(ref identifier );
-                        AssigmentOfFunctionCall(ref assigment);
-                    }
-                    assigment.Value=Expression();
-                }
-                if(token.TypeToken=="COMMA"){
-                    Advance();//skip ,
-                }
-                declaration.Identifier = identifier;
-                declaration.AssigmentValue = assigment;   
-            }
-            Advance(); //skip ;
-            return declaration;
-        }
-        public  void AddPropertieToIdentifier(ref Identifier identifier){
-            while(token.TypeToken=="DOT"){
-                Advance();
-                identifier?.Properties?.Add(new NodeToParser
-                    {
-                        TypeToken = token.TypeToken,
-                        ValueToken = token.ValueToken
-                    });
-                Advance();
-            }
-        }
-        public  void AssigmentOfFunctionCall(ref AssigmentNode assigment){
-            if(token.TypeToken=="OPEN_PARENTHESIS"){
-                Advance();
-                if(token.TypeToken!="OPEN_PARENTHESIS"){
-                    assigment.Parameters.Add(new (){
-                        Name=new NodeToParser
-                            {
-                                TypeToken = token.TypeToken,
-                                ValueToken = token.ValueToken
-                            }
-                    });
-                    Advance();
-                    while(token.TypeToken=="COMMA"){
-                        assigment.Parameters.Add(new(){Name = new NodeToParser
-                            {
-                                TypeToken = token.TypeToken,
-                                ValueToken = token.ValueToken
-                            }});
-                        Advance();
-                    }
-                }
-                Advance(); //skip )
-            }
-        }
+         
     }
 }
