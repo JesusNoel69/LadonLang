@@ -242,49 +242,51 @@ namespace LadonLangAST
             }
             return function;
         }
-        public  InOutPutNode InPut(){
+        public  InPutNode InPut(){
+            //[Read];   //[Read:identifier]
             //[Read(“entrada”):Url=docUrl];
             //[Read(“entrada”)];
-            InOutPutNode input=new();
-            Advance();//skip READ        
-            Advance();//skip (
-            while(token.TypeToken!="CLOSE_PARENTHESIS"){
-                input?.Value?.Add(new NodeToParser
-                    {
-                        TypeToken = token.TypeToken,
-                        ValueToken = token.ValueToken
-                    });
-                Advance();
-            }
-            Advance();//skip )
-            if(token.TypeToken=="DOUBLE_DOT"){
-                Advance(); //skip :
-                Advance(); //skip URL
-                Advance(); //skip =
-                if(input!=null)
-                    input.Url=new NodeToParser
+            InPutNode input=new();
+            Advance();//skip READ  
+            if(token.TypeToken=="OPEN_PARENTHESIS"){
+                 Advance();//skip (
+                input.Value=new NodeToParser
                     {
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
                 Advance();
-            }            
-            Advance();//skip ]    
-            Advance();//skip ;    
+                Advance();//skip )
+                if(token.TypeToken=="DOUBLE_DOT"){
+                    Advance(); //skip :
+                    Advance(); //skip URL
+                    Advance(); //skip =
+                    if(input!=null)
+                        input.Url=new NodeToParser
+                        {
+                            TypeToken = token.TypeToken,
+                            ValueToken = token.ValueToken
+                        };
+                    Advance();
+                }            
+                Advance();//skip ]   
+            }     
+            
+            // Advance();//skip ;    
             return input;
         }
-        public  InOutPutNode OutPut(){
+        public  OutPutNode OutPut(){
             //[Write(“message”)];
             //[Write : Url=docUrl];
-            InOutPutNode output=new();
+            OutPutNode output=new();
             Advance(); //skip WRITE
             if(token.TypeToken=="OPEN_PARENTHESIS"){
                 Advance();//skip (
-                output?.Value?.Add(new NodeToParser
+                output.Value=new NodeToParser
                     {
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
-                    });
+                    };
                 Advance();
                 Advance();//skip )
             }
@@ -301,7 +303,7 @@ namespace LadonLangAST
                 Advance();
             }
             Advance(); //skip ]
-            Advance(); //skip ;
+            // Advance(); //skip ;
             return output;
         }
         public  EntityNode Entity(){

@@ -134,17 +134,31 @@ namespace LadonLang.Data{
         }
     }
     /******************************************************************************/
-    public class InOutPutNode : ASTNode
+    public class OutPutNode : ASTNode
     {
-        public List<NodeToParser>? Value;
-        public NodeToParser? Url;//
+        public NodeToParser? Value;
+        public NodeToParser? Url;
         public override void Print()
         {
             indentLevel++;
-            Console.WriteLine($"{Indent()}===Input or Output===");
-            Value?.ForEach(value => Console.WriteLine($"{Indent()}{value.TypeToken}"));
+            Console.WriteLine($"{Indent()}===Output===");
+            Console.WriteLine($"{Indent()}Value: {Value?.TypeToken}");
             Console.WriteLine($"{Indent()}Url: {Url?.TypeToken}");
-            Console.WriteLine($"{Indent()}===Fin Input or Output===");
+            Console.WriteLine($"{Indent()}===Fin Output===");
+            indentLevel--;
+        }
+    }
+    public class InPutNode : ASTNode
+    {
+        public NodeToParser? Value;
+        public NodeToParser? Url;
+        public override void Print()
+        {
+            indentLevel++;
+            Console.WriteLine($"{Indent()}===Input===");
+            Console.WriteLine($"{Indent()}Value: {Value?.TypeToken}");
+            Console.WriteLine($"{Indent()}Url: {Url?.TypeToken}");
+            Console.WriteLine($"{Indent()}===Fin Input===");
             indentLevel--;
         }
     }

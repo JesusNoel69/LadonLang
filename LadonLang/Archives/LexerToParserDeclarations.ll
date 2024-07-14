@@ -1,9 +1,3 @@
-[Entity #name]
----
-    go;
-    [Entity #name]
-    ---
-
-        
-    --- 
----
+[Read];
+[Read("entrada"):Url=docUrl];
+[Read("entrada")];

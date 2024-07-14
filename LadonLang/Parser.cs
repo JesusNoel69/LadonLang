@@ -214,8 +214,15 @@ namespace LadonLang
                             throw new Exception("Se esperaba )");
                         }
                     }
-                }else{
-                    throw new Exception("Se esperaba (");
+                }
+                else if(token=="CLOSE_CORCHETES"){
+                    Advance();
+                    if(token=="SEMICOLON"){
+                        Advance();
+                        return true;
+                    }else{
+                        throw new Exception("Se esperaba ;");
+                    }
                 }
             }
             return false;
