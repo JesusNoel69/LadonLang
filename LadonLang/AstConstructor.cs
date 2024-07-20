@@ -8,10 +8,7 @@ namespace LadonLangAST
         public  int _index = 0;
         public NodeToParser token =new();     
         public  List<Node> _tokenVector = tokenVector;
-        
         public  List<ASTNode> root = [];
-        // public  ASTNode? blocks;
-
         public  List<ASTNode> GetAst(){
             return root;
         }
@@ -23,19 +20,6 @@ namespace LadonLangAST
                 token.TypeToken = _tokenVector[_index].tipoToken;
                 token.ValueToken = _tokenVector[_index].token;
                 _index++;
-                // System.Console.WriteLine(token.TypeToken+"el valor del advance");
-            }
-        }
-        public  void Retreat()
-        {
-            if (_index > 0)
-            {
-                _index--;//
-
-                token.TypeToken = _tokenVector[_index].tipoToken;
-                token.ValueToken = _tokenVector[_index].token;
-
-
             }
         }
         public void Start(List<Node> tokenVector)
@@ -68,36 +52,33 @@ namespace LadonLangAST
                     }
                 }else  if(token.TypeToken=="FN"){
                     blocks=Function();
-                }
-                // else if(token.TypeToken=="IDENTIFIER"||token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"||token.TypeToken=="STR"){
-                //     blocks=Declare();
-                // }
-                else if(token.TypeToken=="GO"){
+                }else if(token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"||token.TypeToken=="STR"){
+                    blocks = Declaration();
+                }else if(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
+                    token.TypeToken=="STRING"||token.TypeToken=="IDENTIFIER"){
+                    blocks=UseVariable();
+                }else if(token.TypeToken=="GO"){
                     blocks = Flow();
-                }
-                else if(token.TypeToken=="@"){
+                }else if(token.TypeToken=="@"){//caso que sirve como raiz del ast
                     blocks=RootCase();
                 }
                 if(blocks!=null){
                     root.Add(blocks);
                     blocks=null;
                 }
-                //al ejecutar una instruccion este salta el context-token y le permite avanzar
+                //al ejecutar una instruccion este salta el context-token o el semicolon y le permite avanzar
                 Advance();
             }
             return blocks;
         }
-        // public int countGlobal=0;
         public  ASTNode? ReturnBlock(){
             ASTNode? blocks=null;
-
             if(token.TypeToken=="OPEN_CORCHETES"){
                 Advance();//skip [
                 if(token.TypeToken=="IF"){
                     blocks=If();
                 }
                 else  if(token.TypeToken=="LOOP"){
-                    System.Console.WriteLine("--------------------- "+ token.ValueToken);
                     blocks=Loop();
                 }else  if(token.TypeToken=="READ"){
                     blocks=InPut();
@@ -108,10 +89,13 @@ namespace LadonLangAST
                 }
             }else  if(token.TypeToken=="FN"){
                 blocks=Function();
+            }else if(token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"||token.TypeToken=="STR"){
+                    blocks = Declaration();
             }
-            // else if(token.TypeToken=="IDENTIFIER"||token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"||token.TypeToken=="STR"){
-            //     blocks=Declare();
-            // }
+            else if(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
+                    token.TypeToken=="STRING"||token.TypeToken=="IDENTIFIER"){
+                blocks=UseVariable();
+            }
             else if(token.TypeToken=="GO"){
                 blocks = Flow();
             }
@@ -311,10 +295,6 @@ namespace LadonLangAST
             return output;
         }
         public  EntityNode Entity(){
-            //[Entity #name]
-            // ---
-            //                 Str identifier;
-            // ---
             EntityNode entity = new();
             Advance(); //skip ENTITY
             Advance(); //skip #
@@ -351,8 +331,180 @@ namespace LadonLangAST
             return flow;
         }
 
-        ////
-        //////
-         
+        public DeclarationNode Declaration(){
+            //type identifier = value;
+            DeclarationNode declaration = new()
+            {
+                Type = new()
+                {
+                    TypeToken = token.TypeToken,
+                    ValueToken = token.ValueToken
+                }
+            };
+            Advance();//skip type
+            declaration.Identifier= new Identifier{
+                Name = new NodeToParser{
+                    TypeToken = token.TypeToken,
+                    ValueToken= token.ValueToken
+                }
+            };
+            Advance();//skip identifier
+            
+            if(token.TypeToken=="EQUAL"){
+                Advance();//skip = 
+                //
+                while(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
+                    token.TypeToken=="STRING"||token.TypeToken=="IDENTIFIER"){
+
+                    if(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
+                        token.TypeToken=="STRING"){
+                        declaration.Value?.Add(
+                            new Identifier{
+                                Name = new NodeToParser{
+                                    TypeToken = token.TypeToken,
+                                    ValueToken= token.ValueToken
+                                }
+                        });
+                        Advance();//skip value
+                    }else if(token.TypeToken=="IDENTIFIER"){
+                        Identifier identifier = new(){
+                            Name = new NodeToParser{
+                                TypeToken = token.TypeToken,
+                                ValueToken= token.ValueToken
+                            }
+                        };
+                        Advance(); //skip identifier
+                        if(token.TypeToken=="DOT"){
+                            while(token.TypeToken=="DOT"){
+                                Advance();//skip .
+                                identifier.Properties?.Add(new Identifier{
+                                    Name = new NodeToParser{
+                                        TypeToken = identifier.Name.TypeToken,
+                                        ValueToken = identifier.Name.ValueToken,
+                                    }
+                                });
+                                Advance();//skip identifier 
+                                declaration.Value?.Add(identifier);
+                            }
+                        }
+                    }
+                    if(token.TypeToken=="SLASH"||token.TypeToken=="PLUS"||token.TypeToken=="MINUS"
+                    ||token.TypeToken=="ASTERISK"){
+                        declaration.Value?.Add(new Symbol{
+                            NameSymbol=new(){
+                                TypeToken = token.TypeToken,
+                                ValueToken = token.ValueToken
+                            }
+                        });
+                        Advance();
+                    }
+                }
+                //
+            }    
+            return declaration;
+        }
+        public UsageVariableNode UseVariable(){
+            UsageVariableNode variable = new();
+                while(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
+                    token.TypeToken=="STRING"||token.TypeToken=="IDENTIFIER"){
+
+                    if(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
+                        token.TypeToken=="STRING"){
+                        variable.LeftValue?.Add(
+                            new Identifier{
+                            Name = new NodeToParser{
+                                TypeToken = token.TypeToken,
+                                ValueToken= token.ValueToken
+                            }
+                        });
+                        Advance();//skip value
+                    }else if(token.TypeToken=="IDENTIFIER"){
+                        Identifier identifier = new(){
+                            Name = new NodeToParser{
+                                TypeToken = token.TypeToken,
+                                ValueToken= token.ValueToken
+                            }
+                        };
+                        Advance(); //skip identifier
+                        if(token.TypeToken=="DOT"){
+                            while(token.TypeToken=="DOT"){
+                                Advance();//skip .
+                                identifier.Properties?.Add(new Identifier{
+                                    Name = new NodeToParser{
+                                        TypeToken = identifier.Name.TypeToken,
+                                        ValueToken = identifier.Name.ValueToken,
+                                    }
+                                });
+                                Advance();//skip identifier 
+                            }
+                        }
+                        variable.LeftValue?.Add(identifier);
+                    }
+                    if(token.TypeToken=="SLASH"||token.TypeToken=="PLUS"||token.TypeToken=="MINUS"
+                    ||token.TypeToken=="ASTERISK"){
+                        variable.LeftValue?.Add(new Symbol{
+                            NameSymbol=new(){
+                                TypeToken = token.TypeToken,
+                                ValueToken = token.ValueToken
+                            }
+                        });
+                        Advance();
+                    }
+                }
+
+            if(token.TypeToken=="EQUAL"){
+                Advance();//skip = 
+                while(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
+                    token.TypeToken=="STRING"||token.TypeToken=="IDENTIFIER"){
+
+                    if(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
+                        token.TypeToken=="STRING"){
+                        variable.RightValue?.Add(
+                            new Identifier{
+                            Name = new NodeToParser{
+                                TypeToken = token.TypeToken,
+                                ValueToken= token.ValueToken
+                            }
+                        });
+                        Advance();//skip value
+                    }else if(token.TypeToken=="IDENTIFIER"){
+                        Identifier identifier = new(){
+                            Name = new NodeToParser{
+                                TypeToken = token.TypeToken,
+                                ValueToken= token.ValueToken
+                            }
+                        };
+                        Advance(); //skip identifier
+                    
+
+                        if(token.TypeToken=="DOT"){
+                            
+                            while(token.TypeToken=="DOT"){
+                                Advance();//skip .
+                                identifier.Properties?.Add(new Identifier{
+                                    Name = new NodeToParser{
+                                        TypeToken = identifier.Name.TypeToken,
+                                        ValueToken = identifier.Name.ValueToken,
+                                    }
+                                });
+                                Advance();//skip identifier 
+                                variable.RightValue?.Add(identifier);
+                            }
+                        }
+                    }
+                    if(token.TypeToken=="SLASH"||token.TypeToken=="PLUS"||token.TypeToken=="MINUS"
+                    ||token.TypeToken=="ASTERISK"){
+                        variable.RightValue?.Add(new Symbol{
+                            NameSymbol=new(){
+                                TypeToken = token.TypeToken,
+                                ValueToken = token.ValueToken
+                            }
+                        });
+                        Advance();
+                    }
+                }
+            }
+            return variable;
+        }         
     }
 }

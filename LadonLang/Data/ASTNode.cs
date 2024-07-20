@@ -156,8 +156,8 @@ namespace LadonLang.Data{
         {
             indentLevel++;
             Console.WriteLine($"{Indent()}===Input===");
-            Console.WriteLine($"{Indent()}Value: {Value?.TypeToken}");
-            Console.WriteLine($"{Indent()}Url: {Url?.TypeToken}");
+            Console.WriteLine($"{Indent()}    Value: {Value?.TypeToken}");
+            Console.WriteLine($"{Indent()}    Url: {Url?.TypeToken}");
             Console.WriteLine($"{Indent()}===Fin Input===");
             indentLevel--;
         }
@@ -170,11 +170,77 @@ namespace LadonLang.Data{
             indentLevel++;
             Console.WriteLine($"{Indent()}===Go===");
             if(Identifier?.TypeToken!=null){//si no tiene identifier los 
-                Console.WriteLine($"{Indent()}Go to: {Identifier?.ValueToken}");
+                Console.WriteLine($"{Indent()}    Go to: {Identifier?.ValueToken}");
             }
             Console.WriteLine($"{Indent()}===Fin Go===");
             indentLevel--;
         }
     }
    
+
+   ///
+    public class DeclarationNode : ASTNode{
+        public NodeToParser? Type{get; set;}
+        public Identifier? Identifier {get; set;}
+        public List<ASTNode>? Value{get; set;}=[]; //identifier || string || num || Expression || 
+        public override void Print()
+        {
+            indentLevel++;
+            Console.WriteLine($"{Indent()}===Declaration===");
+            Console.WriteLine($"{Indent()}    Type: {Type?.TypeToken}");
+            Identifier?.Print();
+            Console.WriteLine($"{Indent()}    Value: ");
+            Value?.ForEach(eachValue=>{
+                // Console.Write($"{eachValue?.TypeToken} ");
+                eachValue?.Print();
+            });
+            Console.WriteLine($"{Indent()}===Declaration Fin===");
+            indentLevel--;
+        }
+    }
+     public class UsageVariableNode : ASTNode{
+        public List<ASTNode>? LeftValue{get; set;}=[];
+        public List<ASTNode>? RightValue{get; set;}=[]; //identifier || string || num || Expression ||
+        public override void Print(){
+            indentLevel++;
+            Console.WriteLine($"{Indent()}===Use Variable===");
+            Console.WriteLine($"{Indent()}===Left===");
+            LeftValue?.ForEach(eachValue=>eachValue?.Print());
+            Console.WriteLine($"{Indent()}===Left fin===");
+
+            Console.WriteLine($"{Indent()}===Right===");
+            RightValue?.ForEach(eachValue=>eachValue?.Print());
+            Console.WriteLine($"{Indent()}===Right fin===");
+            
+            Console.WriteLine($"{Indent()}===Use Variable Fin===");
+            indentLevel--;
+        } 
+    }
+    public class Identifier : ASTNode{
+        public NodeToParser? Name {get; set;}
+        public List<ASTNode>? Properties{get; set;}=[]; //.Index.toString()  .IndexFirst
+        public override void Print()
+        {
+            indentLevel++;
+            Console.WriteLine($"{Indent()}===Identifier===");
+            Console.WriteLine($"{Indent()}    Name: {Name?.TypeToken}");
+            Properties?.ForEach(eachProperty=>{
+                Console.WriteLine($"{Indent()}Properties: ");
+                eachProperty?.Print();
+            });
+            Console.WriteLine($"{Indent()}===Identifier Fin===");
+            indentLevel--;
+        }
+    }
+    public class Symbol : ASTNode{
+        public NodeToParser? NameSymbol {get; set;}
+
+        public override void Print(){
+            indentLevel++;
+            Console.WriteLine($"{Indent()}===Symbol===");
+            Console.WriteLine($"{Indent()}    Symbol: {NameSymbol?.TypeToken}");
+            Console.WriteLine($"{Indent()}===Symbol fin===");
+            indentLevel--;
+        }
+    }
 }

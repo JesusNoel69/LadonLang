@@ -1,3 +1,2 @@
-[Read];
-[Read("entrada"):Url=docUrl];
-[Read("entrada")];
+num n=2;
+m=n.r+2;
