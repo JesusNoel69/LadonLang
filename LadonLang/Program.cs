@@ -6,7 +6,7 @@ bool next=true;
 List<Node> tokenVector=[];
     Console.WriteLine("empezando");
 //C:\Users\hp\Documents\Proyectos\Language Programing\LadonLang\Archives\InitialLexer.ll
-StreamReader archive = new StreamReader(@"C:/Users/hp/Documents/Proyectos/Language Programing/LadonLang/Archives/LexerToParserDeclarations.ll");
+StreamReader archive = new(@"C:/Users/hp/Documents/Proyectos/Language Programing/LadonLang/Archives/LexerToParserDeclarations.ll");
 while((line = archive.ReadLine())!= null && next==true){
     Console.WriteLine("empezando");
     //se le agreg un espacio en la linea para que reconozca en caso de que no lleve ; pero siga siendo parte de otra instruccion consecuente
@@ -39,4 +39,17 @@ if(next){
         t.Print();
     }
     // ast._tokenVector.ForEach(x=>System.Console.WriteLine( x.tipoToken));
+    List<SymbolTable> symbols =
+    [
+        new SymbolTable("x","Local","0xA1",2)
+        {
+            Type = "variable",
+            DataType = "int",
+            Size = 4,
+            Context = "-"
+        },
+    ];
+
+    SymbolTable.ShowTable(symbols);
+
 }
