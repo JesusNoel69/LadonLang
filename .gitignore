@@ -1,6 +1,8 @@
 # Ignore all bin and obj folders
 bin/
 obj/
+LadonLang/bin/
+LadonLang/obj/
 
 # Ignore all dll and exe files
 *.dll
@@ -11,5 +13,5 @@ obj/
 *.cache
 
 # Ignore all word temporal files
-~*
 *.tmp
+~*
