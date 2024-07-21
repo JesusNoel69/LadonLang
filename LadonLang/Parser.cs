@@ -59,7 +59,41 @@ namespace LadonLang
                     Advance();
                     StatementsBody();
                     return true;
-                }else{
+                }
+                else{
+                    //ToDo: implement a parameter for function call, this implementation isn't correct and i need fix with grammars
+                    // if(token=="OPEN_PARENTHESIS"){
+
+                    //     Advance();
+                    //     if(token=="IDENTIFIER" || token=="NUMBER"){
+                    //         Advance();
+                    //     }
+                    //     while (token=="COMMA"){
+
+                    //         Advance();
+                    //         Advance();
+                    //         if(token=="DOT"){
+                    //             Advance();
+                    //             Advance();
+                    //         }
+                    //     }
+                    //     if(token=="CLOSE_PARENTHESIS"){
+                    //         Advance();
+                    //         if(token=="SEMICOLON"){
+                    //             Advance();
+                    //             StatementsBody();
+                    //             return true;
+                    //         }else{
+                    //             throw new Exception("Error. se esperaba un ;");
+                    //         }
+                    //     }else{
+                    //         throw new Exception("Error. se esperaba un ) "+token);
+                    //     }
+                        
+                    // }else{
+                    //     throw new Exception("Error. se esperaba un ;");
+                    // }
+                    //--------------------------------
                     throw new Exception("Error. se esperaba un ;");
                 }
             }else if (token == "FN")
@@ -366,7 +400,8 @@ namespace LadonLang
         }
 
         public static bool FunctionCall(){
-           if(token=="IDENTIFIER" && afterToken=="OPEN_PARENTHESIS"){
+            System.Console.WriteLine("hola el token es: "+token);
+           if(token=="IDENTIFIER" ){//&& afterToken=="OPEN_PARENTHESIS"
                 Advance();
                 if(token=="OPEN_PARENTHESIS"){
                     Advance();
@@ -393,7 +428,6 @@ namespace LadonLang
         // Expressions
         private static bool Expression()
         {
-
             if (Term())
             {
                 return ExpressionPrime();
@@ -466,7 +500,6 @@ namespace LadonLang
             }
         }
 
-        // Declarations
         public static void Function()
         {
             if (token == "FN")
