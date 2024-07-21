@@ -199,7 +199,7 @@ namespace LadonLang.Data{
         }
     }
      public class UsageVariableNode : ASTNode{
-        public List<ASTNode>? LeftValue{get; set;}=[];
+        public List<ASTNode>? LeftValue{get; set;}=[]; //identifier || string || num || Expression ||
         public List<ASTNode>? RightValue{get; set;}=[]; //identifier || string || num || Expression ||
         public override void Print(){
             indentLevel++;
@@ -215,6 +215,24 @@ namespace LadonLang.Data{
             Console.WriteLine($"{Indent()}===Use Variable Fin===");
             indentLevel--;
         } 
+    }
+    public class FunctionCalledNode: ASTNode{
+        public NodeToParser? NameFunctionCall{get;set;}
+        public List<List<ASTNode>> Parameters {get; set;}=[];
+        public override void Print(){
+            indentLevel++;
+            Console.WriteLine($"{Indent()}===Function Call===");
+            Console.WriteLine($"{Indent()}Name: {NameFunctionCall?.TypeToken}");
+            Console.WriteLine($"{Indent()}===Parameters===");
+            Parameters?.ForEach(eachValue=>{
+                Console.WriteLine($"{Indent()}===Parameter===");
+                eachValue?.ForEach(eachValue=>eachValue.Print());
+                Console.WriteLine($"{Indent()}===Parameter fin===");
+            });
+            Console.WriteLine($"{Indent()}===Parameters fin===");
+            Console.WriteLine($"{Indent()}===Function Call fin===");
+            indentLevel--;
+        }
     }
     public class Identifier : ASTNode{
         public NodeToParser? Name {get; set;}
@@ -234,7 +252,6 @@ namespace LadonLang.Data{
     }
     public class Symbol : ASTNode{
         public NodeToParser? NameSymbol {get; set;}
-
         public override void Print(){
             indentLevel++;
             Console.WriteLine($"{Indent()}===Symbol===");
