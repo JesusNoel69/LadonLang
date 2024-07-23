@@ -157,11 +157,11 @@ namespace LadonLang//LadonLangAST
             }
             global--;
             _table.Add(new SymbolTable{
-               Name="IF",
-               Type="Structure control",
+               Name=identifierOfStructure,
+               Type="IF",
                Scope=scopeIf,
                Context=new List<string>(context),
-               NameOfStructure=identifierOfStructure
+               ExtraData="Control"
             });
             if(name!=""){
                 context.RemoveAt(-1);
@@ -217,11 +217,11 @@ namespace LadonLang//LadonLangAST
                 Advance();//skip ---
             }
             _table.Add(new SymbolTable{
-               Name="LOOP",
-               Type="Structure control",
+               Name=identifierOfStructure,
+               Type="LOOP",
                Scope=scopeLoop,
                Context=new List<string>(context),
-               NameOfStructure=identifierOfStructure
+               ExtraData="Control Structure"
             });
             global--;
             context.RemoveAt(context.Count-1);
@@ -429,10 +429,10 @@ namespace LadonLang//LadonLangAST
                 Advance(); // skip ---
             }
             _table.Add(new SymbolTable{
-               Name="ENTITY",
-               Type="Data",
+               Name=identifierOfStructure,
+               Type="ENTITY",
                Scope=scopeEntity,
-               NameOfStructure=identifierOfStructure
+               ExtraData="Data"
             });
             global--;
             if(name!=""){
@@ -461,7 +461,7 @@ namespace LadonLang//LadonLangAST
             }
             _table.Add(new SymbolTable{
                Name="FLOW",
-               Type="Control structure",
+               Type="Control Structure",
                Scope=scopeFlow,
                Parameters=[parameterToSymbolTable],
                Context=new List<string>(context)
