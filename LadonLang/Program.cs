@@ -1,5 +1,5 @@
 ﻿using LadonLang;
-using LadonLangAST;
+// using LadonLangAST;
 string? line, lineLower;
 int numLine=1;
 bool next=true;
@@ -33,23 +33,26 @@ if(next){
         // }
     Console.WriteLine("=======");
     AstConstructor ast = new(tokenVector);
-    ast.Start(tokenVector);
+    //
+    List<SymbolTable> table=[];
+    ast.Start(ref table);
+    //
     Console.WriteLine(ast.root.Count+" hola");
     foreach(var t in ast.root){
         t.Print();
     }
     // ast._tokenVector.ForEach(x=>System.Console.WriteLine( x.tipoToken));
-    List<SymbolTable> symbols =
-    [
-        new SymbolTable("x","Local","0xA1",2)
-        {
-            Type = "variable",
-            DataType = "int",
-            Size = 4,
-            Context = "-"
-        },
-    ];
+    // List<SymbolTable> symbols =
+    // [
+    //     new SymbolTable("x","Local","0xA1",2)
+    //     {
+    //         Type = "variable",
+    //         DataType = "int",
+    //         Size = 4,
+    //         Context = "-"
+    //     },
+    // ];
 
-    SymbolTable.ShowTable(symbols);
+    SymbolTable.ShowTable(table);
 
 }

@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Runtime.CompilerServices;
 using LadonLang.Data;
 // using LadonLang;
 namespace LadonLang//LadonLangAST
@@ -9,16 +11,8 @@ namespace LadonLang//LadonLangAST
         public  List<Node> _tokenVector = tokenVector;
         public  List<ASTNode> root = [];
         public List<SymbolTable> _table=[];
-        // public int countIf=0;
-        public int ifIsGlobal=0;
-        public int loopIsGlobal=0;
-        public int functionIsGlobal=0;
-        public int entityIsGlobal=0;
-        public int declaratonIsGlobal=0;
-        public int useVariableIsGlobal=0;
-        public int inPutIsGlobal=0;
-        public int outPutIsGlobal=0;
-        public int flowIsGlobal=0;
+        public int global=0;
+        public List<string> context=[];
         public  List<ASTNode> GetAst(){
             return root;
         }
@@ -38,12 +32,12 @@ namespace LadonLang//LadonLangAST
                
             if (_tokenVector.Count > 0)
             {
+                context.Add("GLobal");
                 Statements();
             }
         }
         public  ASTNode? Statements(){
             _tokenVector.Insert(0,new(-1,"@","PRINCIPAL_CONTEXT",1));
-
             ASTNode? blocks=null;
             while (_index < _tokenVector.Count){
 
@@ -51,19 +45,19 @@ namespace LadonLang//LadonLangAST
                 if(token.TypeToken=="OPEN_CORCHETES"){
                     Advance();//skip [
                     if(token.TypeToken=="IF"){
-                        blocks=If();
+                        blocks=If("");
                     }
                     else  if(token.TypeToken=="LOOP"){
-                        blocks=Loop();
+                        blocks=Loop("");
                     }else  if(token.TypeToken=="READ"){
                         blocks=InPut();
                     }else  if(token.TypeToken=="WRITE"){
                         blocks=OutPut();
                     }else  if(token.TypeToken=="ENTITY"){
-                        blocks=Entity();
+                        blocks=Entity("");
                     }
                 }else  if(token.TypeToken=="FN"){
-                    blocks=Function();
+                    blocks=Function("");
                 }else if(token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"||token.TypeToken=="STR"){
                     blocks = Declaration();
                 }else if(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
@@ -81,6 +75,7 @@ namespace LadonLang//LadonLangAST
                 //al ejecutar una instruccion este salta el context-token o el semicolon y le permite avanzar
                 Advance();
             }
+
             return blocks;
         }
         public  ASTNode? ReturnBlock(string name){
@@ -88,19 +83,19 @@ namespace LadonLang//LadonLangAST
             if(token.TypeToken=="OPEN_CORCHETES"){
                 Advance();//skip [
                 if(token.TypeToken=="IF"){
-                    blocks=If();
+                    blocks=If(name);
                 }
                 else  if(token.TypeToken=="LOOP"){
-                    blocks=Loop();
+                    blocks=Loop(name);
                 }else  if(token.TypeToken=="READ"){
                     blocks=InPut();
                 }else  if(token.TypeToken=="WRITE"){
                     blocks=OutPut();
                 }else  if(token.TypeToken=="ENTITY"){
-                    blocks=Entity();
+                    blocks=Entity(name);
                 }
             }else  if(token.TypeToken=="FN"){
-                blocks=Function();
+                blocks=Function(name);
             }else if(token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"||token.TypeToken=="STR"){
                     blocks = Declaration();
             }
@@ -120,13 +115,14 @@ namespace LadonLang//LadonLangAST
             principalContextNode.PrincipalBlock?.Add(ReturnBlock("MAIN"));
             return principalContextNode;
         }
-        public  IfNode If(){
+        public  IfNode If(string name){
             IfNode _if = new();
             string scopeIf = "Local";
-            if(ifIsGlobal==0){
+            string identifierOfStructure="";
+            if(global==0){
                 scopeIf="Global";
             }
-            ifIsGlobal++;
+            global++;
             Advance(); //skip IF
             Advance();//skip :
             Advance();//skip (
@@ -147,30 +143,39 @@ namespace LadonLang//LadonLangAST
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
+                    identifierOfStructure=token.TypeToken;
                 Advance();
             }
             Advance();//skip ]
             Advance();//skip ---
+            if(name!=""){
+                context.Add(name);
+            }
             while(token.TypeToken!="CONTEXT_TOKEN"){
                 _if.IfBlock?.Add(ReturnBlock("IF"));
                 Advance();//skip ---
             }
-            ifIsGlobal--;
+            global--;
             _table.Add(new SymbolTable{
                Name="IF",
                Type="Structure control",
                Scope=scopeIf,
-               Context="-"//contemplar su uso en el futuro
+               Context=new List<string>(context),
+               NameOfStructure=identifierOfStructure
             });
+            if(name!=""){
+                context.RemoveAt(-1);
+            }
             return _if;
         }
-        public  LoopNode Loop(){
+        public  LoopNode Loop(string name){
             LoopNode loop = new();
             string scopeLoop = "Local";
-            if(loopIsGlobal==0){
+            string identifierOfStructure="";
+            if(global==0){
                 scopeLoop="Global";
             }
-            loopIsGlobal++;
+            global++;
             Advance();//skip Loop
             if(token.TypeToken=="DOUBLE_DOT"){
                 Advance(); //skip :
@@ -199,32 +204,39 @@ namespace LadonLang//LadonLangAST
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
-                    Advance();
+                identifierOfStructure=token.ValueToken;
+                Advance();
+                
             }
 
             Advance();//skip ]
             Advance();//skip ---
+            context.Add(name);
             while(token.TypeToken!="CONTEXT_TOKEN"){
                 loop.Block?.Add(ReturnBlock("LOOP"));
                 Advance();//skip ---
             }
-            loopIsGlobal--;
             _table.Add(new SymbolTable{
                Name="LOOP",
                Type="Structure control",
                Scope=scopeLoop,
-               Context="-"//contemplar su uso en el futuro
+               Context=new List<string>(context),
+               NameOfStructure=identifierOfStructure
             });
+            global--;
+            context.RemoveAt(context.Count-1);
             return loop;
         }
-        public  FunctionNode Function(){
-            string scopeFunction = "Local";
-            if(functionIsGlobal==0){
-                scopeFunction="Global";
-            }
-            functionIsGlobal++;
+        public  FunctionNode Function(string name){
             string parameterToSymbolTable = "";
             List<string> ParametersToSymbolTable = [];
+            string scopeFunction = "Local";
+            if(global==0){
+                scopeFunction="Global";
+            }
+            global++;
+            string type ="Void";
+
             FunctionNode function = new();
             Advance();//skip FN
             function.Name=new NodeToParser
@@ -232,7 +244,7 @@ namespace LadonLang//LadonLangAST
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
-            string nameFunctionToSymbolTable = "FN "+token.ValueToken;
+            string nameFunctionToSymbolTable = token.ValueToken;
             Advance();
             Advance();//skip (
             Parameter parameter = new();
@@ -269,30 +281,49 @@ namespace LadonLang//LadonLangAST
                     ValueToken = token.ValueToken
                 };
 
+                _table.ForEach(tableField=>{
+                    if(tableField.Name==token.ValueToken){
+                        type= tableField.DataType ?? "Void";
+                    }
+                });
                 Advance();//skip name
             }
             Advance();//skip )
             Advance();//skip ---
+            if(name!=""){
+                context.Add(name);
+            }
+            ContainsDefinitionFor(nameFunctionToSymbolTable);
+            _table.Add(new SymbolTable{
+               Name=nameFunctionToSymbolTable,
+               Type="Function",
+               DataType=type,
+               Scope=scopeFunction,
+               Parameters=ParametersToSymbolTable,
+                Context = new List<string>(context)
+            });
             while(token.TypeToken!="CONTEXT_TOKEN"){
                 function.Block?.Add(ReturnBlock("FN"));
                 Advance();//skip ---
             }
-
-            functionIsGlobal--;
-            _table.Add(new SymbolTable{
-               Name=nameFunctionToSymbolTable,
-               Type="Function",
-               Scope=scopeFunction,
-               
-            });
+            global--;
+            if(name!=""){
+                context.RemoveAt(context.Count-1);
+            }
             return function;
+        }
+        public void ContainsDefinitionFor(string name){
+            _table.ForEach(tableField=>{
+                if(tableField.Name==name){
+                    throw new Exception("Error. ya existe una definicion para "+name);
+                }
+            });
         }
         public  InPutNode InPut(){
             string scopeInput = "Local";
-            if(inPutIsGlobal==0){
+            if(global==0){
                 scopeInput="Global";
             }
-            inPutIsGlobal++;
             string parameterToSymbolTable ="-";
             InPutNode input=new();
             Advance();//skip READ  
@@ -319,24 +350,23 @@ namespace LadonLang//LadonLangAST
                     Advance();
                 }            
                 Advance();//skip ]   
-            }     
-            inPutIsGlobal--;
+            }    
             _table.Add(new SymbolTable{
                Name="INPUT",
                Type="Data",
                Scope=scopeInput,
                Parameters=[parameterToSymbolTable],
+               Context=new List<string>(context)
             });
             // Advance();//skip ;    
             return input;
         }
         public  OutPutNode OutPut(){
             string scopeOutPut = "Local";
-            if(outPutIsGlobal==0){
+            if(global==0){
                 scopeOutPut="Global";
             }
             string parameterToSymbolTable ="-";
-            outPutIsGlobal++;
             OutPutNode output=new();
             Advance(); //skip WRITE
             if(token.TypeToken=="OPEN_PARENTHESIS"){
@@ -364,22 +394,22 @@ namespace LadonLang//LadonLangAST
             }
             Advance(); //skip ]
             // Advance(); //skip ;
-            inPutIsGlobal--;
             _table.Add(new SymbolTable{
                Name="OUTPUT",
                Type="Data",
                Scope=scopeOutPut,
                Parameters=[parameterToSymbolTable],
+               Context=new List<string>(context)
             });
             return output;
         }
-        public  EntityNode Entity(){
+        public  EntityNode Entity(string name){
             EntityNode entity = new();
             string scopeEntity = "Local";
-            if(entityIsGlobal==0){
+            if(global==0){
                 scopeEntity="Global";
             }
-            entityIsGlobal++;
+            global++;
             Advance(); //skip ENTITY
             Advance(); //skip #
             entity.Name=new NodeToParser
@@ -387,28 +417,35 @@ namespace LadonLang//LadonLangAST
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
+            string identifierOfStructure=token.ValueToken;
             Advance();
             Advance();//skip ]
             Advance(); // skip ---
+            if(name!=""){
+                context.Add(name);
+            }
             while(token.TypeToken!="CONTEXT_TOKEN"){
                 entity.Block?.Add(ReturnBlock("ENTITY"));
                 Advance(); // skip ---
             }
-            entityIsGlobal--;
             _table.Add(new SymbolTable{
                Name="ENTITY",
                Type="Data",
                Scope=scopeEntity,
+               NameOfStructure=identifierOfStructure
             });
+            global--;
+            if(name!=""){
+                context.RemoveAt(context.Count-1);
+            }
             return entity;
         }
         public  FlowNode Flow(){
             string scopeFlow = "Local";
-            if(flowIsGlobal==0){
+            if(global==0){
                 scopeFlow="Global";
             }
             string parameterToSymbolTable ="-";
-            flowIsGlobal++;
             Advance();//skip GO
             FlowNode flow = new();
             if(token.TypeToken=="SHARP"){
@@ -422,19 +459,22 @@ namespace LadonLang//LadonLangAST
                     parameterToSymbolTable=token.ValueToken;
                 Advance();//skip name
             }
-            flowIsGlobal--;
             _table.Add(new SymbolTable{
                Name="FLOW",
                Type="Control structure",
                Scope=scopeFlow,
                Parameters=[parameterToSymbolTable],
+               Context=new List<string>(context)
             });
             // Advance();//skip ;
             return flow;
         }
-
         public DeclarationNode Declaration(){
             //type identifier = value;
+            string scopeFlow = "Local";
+            if(global==0){
+                scopeFlow="Global";
+            }
             DeclarationNode declaration = new()
             {
                 Type = new()
@@ -451,7 +491,16 @@ namespace LadonLang//LadonLangAST
                 }
             };
             Advance();//skip identifier
-            
+            ContainsDefinitionFor(declaration.Identifier.Name.ValueToken);
+            _table.Add(new SymbolTable{
+                Name=declaration.Identifier.Name.ValueToken,
+                Type="IDENTIFIER",
+                DataType=declaration.Type.TypeToken,
+                Scope=scopeFlow,
+                Context=new List<string>(context)
+            });
+
+        
             if(token.TypeToken=="EQUAL"){
                 Advance();//skip = 
                 //
@@ -503,6 +552,7 @@ namespace LadonLang//LadonLangAST
                 }
                 //
             }    
+            
             return declaration;
         }
         public ASTNode UseVariable(){
