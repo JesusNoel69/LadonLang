@@ -144,18 +144,14 @@ namespace LadonLang//LadonLangAST
                         ValueToken = token.ValueToken
                     };
                     identifierOfStructure=token.TypeToken;
+                    ContainsDefinitionFor(identifierOfStructure);
                 Advance();
             }
             Advance();//skip ]
             Advance();//skip ---
             if(name!=""){
-                context.Add(name);
+                context.Add(name+"-"+identifierOfStructure);
             }
-            while(token.TypeToken!="CONTEXT_TOKEN"){
-                _if.IfBlock?.Add(ReturnBlock("IF"));
-                Advance();//skip ---
-            }
-            global--;
             _table.Add(new SymbolTable{
                Name=identifierOfStructure,
                Type="IF",
@@ -163,6 +159,12 @@ namespace LadonLang//LadonLangAST
                Context=new List<string>(context),
                ExtraData="Control"
             });
+            while(token.TypeToken!="CONTEXT_TOKEN"){
+                _if.IfBlock?.Add(ReturnBlock("IF"));
+                Advance();//skip ---
+            }
+            global--;
+            
             if(name!=""){
                 context.RemoveAt(-1);
             }
@@ -205,17 +207,14 @@ namespace LadonLang//LadonLangAST
                         ValueToken = token.ValueToken
                     };
                 identifierOfStructure=token.ValueToken;
+                ContainsDefinitionFor(identifierOfStructure);
                 Advance();
                 
             }
 
             Advance();//skip ]
             Advance();//skip ---
-            context.Add(name);
-            while(token.TypeToken!="CONTEXT_TOKEN"){
-                loop.Block?.Add(ReturnBlock("LOOP"));
-                Advance();//skip ---
-            }
+            context.Add(name+"-"+identifierOfStructure);
             _table.Add(new SymbolTable{
                Name=identifierOfStructure,
                Type="LOOP",
@@ -223,6 +222,11 @@ namespace LadonLang//LadonLangAST
                Context=new List<string>(context),
                ExtraData="Control Structure"
             });
+            while(token.TypeToken!="CONTEXT_TOKEN"){
+                loop.Block?.Add(ReturnBlock("LOOP"));
+                Advance();//skip ---
+            }
+           
             global--;
             context.RemoveAt(context.Count-1);
             return loop;
@@ -291,7 +295,7 @@ namespace LadonLang//LadonLangAST
             Advance();//skip )
             Advance();//skip ---
             if(name!=""){
-                context.Add(name);
+                context.Add(name+"-"+nameFunctionToSymbolTable);
             }
             ContainsDefinitionFor(nameFunctionToSymbolTable);
             _table.Add(new SymbolTable{
@@ -418,15 +422,12 @@ namespace LadonLang//LadonLangAST
                         ValueToken = token.ValueToken
                     };
             string identifierOfStructure=token.ValueToken;
+            ContainsDefinitionFor(identifierOfStructure);
             Advance();
             Advance();//skip ]
             Advance(); // skip ---
             if(name!=""){
-                context.Add(name);
-            }
-            while(token.TypeToken!="CONTEXT_TOKEN"){
-                entity.Block?.Add(ReturnBlock("ENTITY"));
-                Advance(); // skip ---
+                context.Add(name+"-"+identifierOfStructure);
             }
             _table.Add(new SymbolTable{
                Name=identifierOfStructure,
@@ -434,6 +435,10 @@ namespace LadonLang//LadonLangAST
                Scope=scopeEntity,
                ExtraData="Data"
             });
+            while(token.TypeToken!="CONTEXT_TOKEN"){
+                entity.Block?.Add(ReturnBlock("ENTITY"));
+                Advance(); // skip ---
+            }
             global--;
             if(name!=""){
                 context.RemoveAt(context.Count-1);
