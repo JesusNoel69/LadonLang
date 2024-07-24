@@ -33,14 +33,10 @@ if(next){
     ast.Start(ref table);
     //
     Console.WriteLine(ast.root.Count+" hola");
-    foreach(var t in ast.root){
-        t.Print();
-    }
-    
-    SymbolTable.ShowTable(table);
+    // foreach(var t in ast.root){
+    //     t.Print();
+    // }  
+    // SymbolTable.ShowTable(table);
     SemanticAnalizer astSemanticAnalysis = new(ref table,ref ast);
     astSemanticAnalysis.Analize();
-
-
-
 }

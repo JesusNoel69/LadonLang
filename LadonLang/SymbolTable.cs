@@ -14,7 +14,7 @@ namespace LadonLang
         public static void ShowTable(List<SymbolTable> symbols)
         {
             Console.WriteLine("-------------------------------------------------------------------------------------------------------------------------------------------------------------");
-            Console.WriteLine("| Name       | Type              | Scope     | DataType   | OffSet  | Size   | Context         | Parameters                     | Extra D                   |");
+            Console.WriteLine("| Name       | Type              | Scope     | DataType   | OffSet  | Size   | Context         | Parameters                     | Extra Data                |");
             Console.WriteLine("-------------------------------------------------------------------------------------------------------------------------------------------------------------");
             foreach (var symbol in symbols)
             {
