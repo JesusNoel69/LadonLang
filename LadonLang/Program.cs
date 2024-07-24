@@ -26,11 +26,6 @@ if(next){
     Console.WriteLine("=======");
     Console.WriteLine("empezando");
     Parser.Structure(tokenVector);
-        // foreach (var statement in Parser._statements)
-        // {
-        //     statement.Print();
-        //     Console.WriteLine(); // asegura una nueva línea despues de la impresion de cada expresion
-        // }
     Console.WriteLine("=======");
     AstConstructor ast = new(tokenVector);
     //
@@ -41,18 +36,11 @@ if(next){
     foreach(var t in ast.root){
         t.Print();
     }
-    // ast._tokenVector.ForEach(x=>System.Console.WriteLine( x.tipoToken));
-    // List<SymbolTable> symbols =
-    // [
-    //     new SymbolTable("x","Local","0xA1",2)
-    //     {
-    //         Type = "variable",
-    //         DataType = "int",
-    //         Size = 4,
-    //         Context = "-"
-    //     },
-    // ];
-
+    
     SymbolTable.ShowTable(table);
+    SemanticAnalizer astSemanticAnalysis = new(ref table,ref ast);
+    astSemanticAnalysis.Analize();
+
+
 
 }
