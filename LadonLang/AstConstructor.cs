@@ -149,9 +149,6 @@ namespace LadonLang//LadonLangAST
             }
             Advance();//skip ]
             Advance();//skip ---
-            if(name!=""){
-                context.Add(name+"-"+identifierOfStructure);
-            }
             _table.Add(new SymbolTable{
                Name=identifierOfStructure,
                Type="IF",
@@ -159,14 +156,17 @@ namespace LadonLang//LadonLangAST
                Context=new List<string>(context),
                ExtraData="Control"
             });
+            if(identifierOfStructure!=""){
+                context.Add(name+"-"+identifierOfStructure);
+            }
             while(token.TypeToken!="CONTEXT_TOKEN"){
                 _if.IfBlock?.Add(ReturnBlock("IF"));
                 Advance();//skip ---
             }
             global--;
             
-            if(name!=""){
-                context.RemoveAt(-1);
+            if(identifierOfStructure!=""){
+                context.RemoveAt(context.Count-1);
             }
             return _if;
         }
@@ -214,7 +214,6 @@ namespace LadonLang//LadonLangAST
 
             Advance();//skip ]
             Advance();//skip ---
-            context.Add(name+"-"+identifierOfStructure);
             _table.Add(new SymbolTable{
                Name=identifierOfStructure,
                Type="LOOP",
@@ -222,13 +221,18 @@ namespace LadonLang//LadonLangAST
                Context=new List<string>(context),
                ExtraData="Control Structure"
             });
+            if(identifierOfStructure!=""){
+                context.Add(name+"-"+identifierOfStructure);
+            }
             while(token.TypeToken!="CONTEXT_TOKEN"){
                 loop.Block?.Add(ReturnBlock("LOOP"));
                 Advance();//skip ---
             }
            
             global--;
-            context.RemoveAt(context.Count-1);
+            if(identifierOfStructure!=""){
+                context.RemoveAt(context.Count-1);
+            }
             return loop;
         }
         public  FunctionNode Function(string name){
@@ -294,9 +298,6 @@ namespace LadonLang//LadonLangAST
             }
             Advance();//skip )
             Advance();//skip ---
-            if(name!=""){
-                context.Add(name+"-"+nameFunctionToSymbolTable);
-            }
             ContainsDefinitionFor(nameFunctionToSymbolTable);
             _table.Add(new SymbolTable{
                Name=nameFunctionToSymbolTable,
@@ -306,14 +307,13 @@ namespace LadonLang//LadonLangAST
                Parameters=ParametersToSymbolTable,
                 Context = new List<string>(context)
             });
+            context.Add(name+"-"+nameFunctionToSymbolTable);
             while(token.TypeToken!="CONTEXT_TOKEN"){
                 function.Block?.Add(ReturnBlock("FN"));
                 Advance();//skip ---
             }
             global--;
-            if(name!=""){
-                context.RemoveAt(context.Count-1);
-            }
+            context.RemoveAt(context.Count-1);
             return function;
         }
         public void ContainsDefinitionFor(string name){
@@ -426,23 +426,19 @@ namespace LadonLang//LadonLangAST
             Advance();
             Advance();//skip ]
             Advance(); // skip ---
-            if(name!=""){
-                context.Add(name+"-"+identifierOfStructure);
-            }
             _table.Add(new SymbolTable{
                Name=identifierOfStructure,
                Type="ENTITY",
                Scope=scopeEntity,
                ExtraData="Data"
             });
+            context.Add(name+"-"+identifierOfStructure);
             while(token.TypeToken!="CONTEXT_TOKEN"){
                 entity.Block?.Add(ReturnBlock("ENTITY"));
                 Advance(); // skip ---
             }
             global--;
-            if(name!=""){
-                context.RemoveAt(context.Count-1);
-            }
+            context.RemoveAt(context.Count-1);
             return entity;
         }
         public  FlowNode Flow(){
