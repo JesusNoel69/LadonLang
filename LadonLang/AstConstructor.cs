@@ -174,6 +174,7 @@ namespace LadonLang//LadonLangAST
             LoopNode loop = new();
             string scopeLoop = "Local";
             string identifierOfStructure="";
+            List<string> parameters =[];
             if(global==0){
                 scopeLoop="Global";
             }
@@ -188,6 +189,7 @@ namespace LadonLang//LadonLangAST
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
+                    parameters.Add("NUM INDEX");
                 Advance();
                 Advance(); //skip ,
                 Advance(); //skip ITER
@@ -197,6 +199,7 @@ namespace LadonLang//LadonLangAST
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
+                    parameters.Add("NUM ITER");//token.TypeToken+
                 Advance();
             }
             if(token.TypeToken=="SHARP"){
@@ -219,7 +222,9 @@ namespace LadonLang//LadonLangAST
                Type="LOOP",
                Scope=scopeLoop,
                Context=new List<string>(context),
-               ExtraData="Control Structure"
+               ExtraData="Control Structure",
+               Parameters=new List<string>(parameters)
+
             });
             if(identifierOfStructure!=""){
                 context.Add(name+"-"+identifierOfStructure);
@@ -288,12 +293,14 @@ namespace LadonLang//LadonLangAST
                     TypeToken=token.TypeToken,
                     ValueToken = token.ValueToken
                 };
-
+                parameterToSymbolTable="";
                 _table.ForEach(tableField=>{
                     if(tableField.Name==token.ValueToken){
                         type= tableField.DataType ?? "Void";
                     }
                 });
+                parameterToSymbolTable+=type+" "+token.ValueToken;//concat name of parameter
+                ParametersToSymbolTable.Add(parameterToSymbolTable);
                 Advance();//skip name
             }
             Advance();//skip )
