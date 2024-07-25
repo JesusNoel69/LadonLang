@@ -61,39 +61,6 @@ namespace LadonLang
                     return true;
                 }
                 else{
-                    //ToDo: implement a parameter for function call, this implementation isn't correct and i need fix with grammars
-                    // if(token=="OPEN_PARENTHESIS"){
-
-                    //     Advance();
-                    //     if(token=="IDENTIFIER" || token=="NUMBER"){
-                    //         Advance();
-                    //     }
-                    //     while (token=="COMMA"){
-
-                    //         Advance();
-                    //         Advance();
-                    //         if(token=="DOT"){
-                    //             Advance();
-                    //             Advance();
-                    //         }
-                    //     }
-                    //     if(token=="CLOSE_PARENTHESIS"){
-                    //         Advance();
-                    //         if(token=="SEMICOLON"){
-                    //             Advance();
-                    //             StatementsBody();
-                    //             return true;
-                    //         }else{
-                    //             throw new Exception("Error. se esperaba un ;");
-                    //         }
-                    //     }else{
-                    //         throw new Exception("Error. se esperaba un ) "+token);
-                    //     }
-                        
-                    // }else{
-                    //     throw new Exception("Error. se esperaba un ;");
-                    // }
-                    //--------------------------------
                     throw new Exception("Error. se esperaba un ;");
                 }
             }else if (token == "FN")
@@ -153,14 +120,17 @@ namespace LadonLang
             return false;
         }
     public static bool AtributeAccess(){
+
         if(token=="IDENTIFIER"){
             Advance();
             if(token=="DOT"){
+
                 Advance();
                 AtributeAccessPrime();
                 return true;
             }else{return true;}
         }
+
         return true;
     }
     public static void AtributeAccessPrime(){
@@ -170,8 +140,11 @@ namespace LadonLang
                 Advance();
 
             }else{
-                // AtributeAccessPrime(ref ValuesList);
+                AtributeAccessPrime();
             }
+            AtributeAccessPrime();
+        }else if(token == "ITER" || token == "INDEX" || token=="INDEXFIRST"){
+            Advance();
         }
     }
 
@@ -342,6 +315,8 @@ namespace LadonLang
                     return true;
                 }
             }else if(token=="IDENTIFIER"){
+            System.Console.WriteLine("----------------------------------------------"+token);
+
                 if(FunctionCall()){
                     // AssignValue();
                 }else if(AtributeAccess()){
@@ -400,8 +375,7 @@ namespace LadonLang
         }
 
         public static bool FunctionCall(){
-            System.Console.WriteLine("hola el token es: "+token);
-           if(token=="IDENTIFIER" ){//&& afterToken=="OPEN_PARENTHESIS"
+           if(token=="IDENTIFIER"&& afterToken=="OPEN_PARENTHESIS"){//&& afterToken=="OPEN_PARENTHESIS"                
                 Advance();
                 if(token=="OPEN_PARENTHESIS"){
                     Advance();
