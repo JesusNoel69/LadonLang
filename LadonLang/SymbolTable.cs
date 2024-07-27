@@ -18,7 +18,7 @@ namespace LadonLang
             Console.WriteLine("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
             foreach (var symbol in symbols)
             {
-                string parameters = symbol.Parameters != null ? string.Join(", ", symbol.Parameters) : "-";
+                string parameters = symbol.Parameters != null ? string.Join(", ", symbol.Parameters) : "";
                 string context = "";
                 symbol.Context?.ForEach((eachContext)=>{
                     context+=eachContext+"->";

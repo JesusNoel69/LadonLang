@@ -1,4 +1,5 @@
 using LadonLang.Data;
+using Microsoft.VisualBasic;
 
 namespace LadonLang
 {
@@ -93,11 +94,74 @@ namespace LadonLang
                     }
                 }
                
+            }else if (node is FunctionCalledNode){
+                FunctionCalledNode? call = node as FunctionCalledNode;
+                bool isNameInTable = false, isFunction = false;
+                int tableParametersNum = 0;
+                //buscar el nombre de la llamada de funcion en la lista de simbolos para ver si existe y si es funcion
+                symbolTable.ForEach(fieldTable => {
+                    if(fieldTable.Name==call?.NameFunctionCall?.ValueToken){
+                        isNameInTable = true;
+                        if(fieldTable.Type=="Function"){
+                            isFunction=true;
+                        }
+                        tableParametersNum=fieldTable.Parameters.Count;
+                    }
+                });
+                if(!isNameInTable){
+                    throw new Exception("Error. Funcion no definida");
+                }
+                if(!isFunction){
+                    throw new Exception("Error. No es una funcion");
+                }
+                FunctionParameterVerification(call,tableParametersNum);
+
             }
         }
+
+        public bool FunctionParameterVerification(FunctionCalledNode call, int numParametersInTable){
+            //comparar el numero de parametros en llamada con el de la tabla
+            int numParametersInCall =0;
+            
+            List<string> typesInCall =[];
+            List<string> typesInTable = TypesOfParametersInSymbolTable();
+            //comparar los tipos con los de la tabla
+            call.Parameters.ForEach(parameters => {
+                parameters.ForEach(parameter=>{
+                    numParametersInCall++;
+                    // UsageVariableNode? parameterVariableUse = parameter as UsageVariableNode;
+                    Identifier? identifierParameter = parameter as Identifier;
+                    if(!NameNotIntTable(identifierParameter.Name.ValueToken)&&identifierParameter.Name.TypeToken=="IDENTIFIER"){
+                        throw new Exception("Error. Parametro no definido previamente");
+                    }
+                    typesInCall.Add(SelectType(identifierParameter));
+
+                });
+            });
+            if(numParametersInCall!=numParametersInTable){
+                throw new Exception("Error. No existe una funcion con ese numero de parametros");
+            }
+            for (int countType = 0; countType < numParametersInCall; countType++)
+            {
+                if(typesInCall[countType]!=typesInTable[countType]){
+                    throw new Exception("Error. Tipo de parametros de la funcion incorrectos");
+                }
+            }
+            return true;
+        }
+
+        public bool NameNotIntTable(string name){
+            bool existsInTable = false;
+            symbolTable.ForEach(fieldTable=>{
+                if(fieldTable.Name==name){
+                    existsInTable=true;
+                }
+            });
+            return existsInTable;
+        }
+
         public bool SameType((List<string>, List<string>) listsTypes){
             if(CheckEachList(listsTypes.Item1)==true && CheckEachList(listsTypes.Item2)==true){//que ambos en sus evaluacones usen los mismos tipos de datos  
-                Console.WriteLine("list 1: "+listsTypes.Item1[0]+" list 2: "+listsTypes.Item2[0]);
                 if(listsTypes.Item1[0]!=listsTypes.Item2[0]){
                     return false;
                 }
@@ -189,6 +253,15 @@ namespace LadonLang
                 _=>""
             };
         }
+        public List<string> TypesOfParametersInSymbolTable(){
+            List<string> TypesInSymbolTable=[];
+            symbolTable.ForEach(fieldTable=>{
+                fieldTable.Parameters.ForEach(eachParameter=>{
+                    TypesInSymbolTable.Add(eachParameter.Split(' ')[0]);
+                });
+            });
+            return TypesInSymbolTable;
+        }
         public string TypeInSymbolTable(string type){
             string result="";
             symbolTable.ForEach(eachValue => {
@@ -203,9 +276,7 @@ namespace LadonLang
        
         public void Scope(){}
         
-        public bool FunctionParameterVerification(){
-            return true;
-        }
+        
         public bool FunctionReturnType(){
             return true;
         }
