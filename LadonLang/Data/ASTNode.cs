@@ -236,7 +236,7 @@ namespace LadonLang.Data{
     }
     public class Identifier : ASTNode{
         public NodeToParser? Name {get; set;}
-        public List<ASTNode>? Properties{get; set;}=[]; //.Index.toString()  .IndexFirst
+        public List<ASTNode>? Properties{get; set;}=[]; //.Index  .IndexFirst
         public override void Print()
         {
             indentLevel++;

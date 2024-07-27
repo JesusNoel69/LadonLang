@@ -731,10 +731,15 @@ namespace LadonLang//LadonLangAST
                                 Advance();//skip identifier 
                                 variable.RightValue?.Add(identifier);
                             }
+                        }else{
+                            variable.RightValue?.Add(identifier);
                         }
+
                     }
+
                     if(token.TypeToken=="SLASH"||token.TypeToken=="PLUS"||token.TypeToken=="MINUS"
                     ||token.TypeToken=="ASTERISK"){
+
                         variable.RightValue?.Add(new Symbol{
                             NameSymbol=new(){
                                 TypeToken = token.TypeToken,
