@@ -121,24 +121,63 @@ namespace LadonLang
 
         public bool FunctionParameterVerification(FunctionCalledNode call, int numParametersInTable){
             //comparar el numero de parametros en llamada con el de la tabla
-            int numParametersInCall =0;
+            int numParametersInCall =0, expressionInParameter=0;
             
             List<string> typesInCall =[];
+            List<string> expressionTypesInCall =[];
             List<string> typesInTable = TypesOfParametersInSymbolTable();
             //comparar los tipos con los de la tabla
             call.Parameters.ForEach(parameters => {
                 parameters.ForEach(parameter=>{
-                    numParametersInCall++;
-                    // UsageVariableNode? parameterVariableUse = parameter as UsageVariableNode;
                     Identifier? identifierParameter = parameter as Identifier;
-                    if(!NameNotIntTable(identifierParameter.Name.ValueToken)&&identifierParameter.Name.TypeToken=="IDENTIFIER"){
-                        throw new Exception("Error. Parametro no definido previamente");
+                    // var identifierMultiple = parameter as List<ASTNode> ;
+                    if(parameters.Count==1){
+                        // expressionTypesInCall.ForEach(val=>Console.WriteLine(val+" eee"));
+                        if(expressionTypesInCall is not []){
+                            if(!CompareTypes(expressionTypesInCall)){
+                                throw new Exception("Error. Tipo de parametro no valido en la llamada a funcion");
+                            }
+                            System.Console.WriteLine(expressionTypesInCall[0]+" valor");
+                            typesInCall.Add(expressionTypesInCall[0]);
+                            expressionTypesInCall=[];
+                        }
+                        expressionInParameter=0;
+
+
+                        // numParametersInCall++;
+                        
+                        if(!NameNotIntTable(identifierParameter?.Name?.ValueToken??"")&&identifierParameter?.Name?.TypeToken=="IDENTIFIER"
+                        && parameter is not Symbol){
+                            throw new Exception("Error. Parametro no definido previamente");
+                        }
+                        if(expressionTypesInCall is []){
+
+                            typesInCall.Add(SelectType(identifierParameter));
+                        }
+
+                    }else{
+                        if(!NameNotIntTable(identifierParameter?.Name?.ValueToken??"")&&identifierParameter?.Name?.TypeToken=="IDENTIFIER"
+                        && parameter is not Symbol){
+                            throw new Exception("Error. Parametro no definido previamente");
+                        }
+                        // List<ASTNode> n=;
+                        // System.Console.WriteLine(parameter.GetType());
+                        // EvaluateNumParameter(n);
+                        if(expressionInParameter<parameters.Count){
+                            expressionInParameter++;
+                            string actualParameterType = EvaluateNumParameter(parameter);
+                            if(actualParameterType!=""){
+                                expressionTypesInCall.Add(actualParameterType);                            
+                            }
+                        }
+
                     }
-                    typesInCall.Add(SelectType(identifierParameter));
 
                 });
             });
-            if(numParametersInCall!=numParametersInTable){
+            System.Console.WriteLine("in call: "+typesInCall.Count+"int table"+numParametersInTable);
+            typesInCall.ForEach(Console.WriteLine);
+            if(typesInCall.Count!=numParametersInTable){
                 throw new Exception("Error. No existe una funcion con ese numero de parametros");
             }
             for (int countType = 0; countType < numParametersInCall; countType++)
@@ -149,7 +188,27 @@ namespace LadonLang
             }
             return true;
         }
-
+        public string EvaluateNumParameter(ASTNode parameter){
+            Identifier? identifier = parameter as Identifier;
+            if(parameter is not Symbol){
+                // System.Console.WriteLine(identifier.Name.TypeToken);
+                // System.Console.WriteLine(SelectType(identifier));
+                return SelectType(identifier);
+                
+            }
+            return "";
+        }
+        public bool CompareTypes(List<string> types){
+            string firstType = types[0];
+            bool result =true;
+            types.ForEach(eachType => {
+                if(firstType!=eachType){
+                    result=false;
+                }
+            });
+            System.Console.WriteLine(result);
+            return result;
+        }
         public bool NameNotIntTable(string name){
             bool existsInTable = false;
             symbolTable.ForEach(fieldTable=>{
@@ -276,13 +335,6 @@ namespace LadonLang
        
         public void Scope(){}
         
-        
-        public bool FunctionReturnType(){
-            return true;
-        }
-        public bool OperandsOfCompatibleTypes(){
-            return true;
-        }
         public bool VerifyCondition(){
             return true;
         }
