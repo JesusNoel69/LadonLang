@@ -315,13 +315,11 @@ namespace LadonLang
                     return true;
                 }
             }else if(token=="IDENTIFIER"){
-            System.Console.WriteLine("----------------------------------------------"+token);
-
                 if(FunctionCall()){
-                    // AssignValue();
+                    AssignValue();
                 }else if(AtributeAccess()){
                     AssignValue();
-                }
+                }else
                 AssignValue();
                 return true;
             }else if(FlowControl()){
@@ -375,7 +373,9 @@ namespace LadonLang
         }
 
         public static bool FunctionCall(){
-           if(token=="IDENTIFIER"&& afterToken=="OPEN_PARENTHESIS"){//&& afterToken=="OPEN_PARENTHESIS"                
+            // System.Console.WriteLine("mi after es: "+afterToken+" y me actual es: "+token);
+           //el afterToken vacio es para cuando la llamada de funcion sea el primer caso, posible refactorizacion
+           if(token=="IDENTIFIER"&& afterToken=="OPEN_PARENTHESIS" || afterToken==""){//&& afterToken=="OPEN_PARENTHESIS"                
                 Advance();
                 if(token=="OPEN_PARENTHESIS"){
                     Advance();
