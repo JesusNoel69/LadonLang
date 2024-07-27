@@ -268,7 +268,7 @@ namespace LadonLang//LadonLangAST
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
-                parameterToSymbolTable+=token.ValueToken;//concat type
+                parameterToSymbolTable+=token.ValueToken.ToUpper();//concat type
                 Advance();//skip type
                 parameter.ParameterName=new NodeToParser
                     {
@@ -299,7 +299,7 @@ namespace LadonLang//LadonLangAST
                         type= tableField.DataType ?? "Void";
                     }
                 });
-                parameterToSymbolTable+=type+" "+token.ValueToken;//concat name of parameter
+                parameterToSymbolTable+=type.ToUpper()+" "+token.ValueToken;//concat name of parameter
                 ParametersToSymbolTable.Add(parameterToSymbolTable);
                 Advance();//skip name
             }
@@ -656,8 +656,6 @@ namespace LadonLang//LadonLangAST
                                         TypeToken = token.TypeToken,
                                         ValueToken= token.ValueToken
                                     };
-                                    System.Console.WriteLine("identificador es "+token.ValueToken);
-                                    Console.ReadKey();
                                     parameters.LeftValue?.Add(new Identifier(){
                                         Name = new NodeToParser{
                                             TypeToken=parameter.Name.TypeToken,
