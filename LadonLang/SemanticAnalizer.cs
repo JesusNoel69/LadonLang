@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using LadonLang.Data;
 using Microsoft.VisualBasic;
 
@@ -55,7 +56,9 @@ namespace LadonLang
         public void TypeNode(ASTNode node){
             if(node is DeclarationNode){
                 DeclarationNode? declaration = node as DeclarationNode;
+                
                 DeclaratedVariableName.Add(declaration?.Identifier?.Name?.ValueToken??"");//
+
             }else if(node is LoopNode){
                 LoopNode? loop = node as LoopNode;
                 if(loop?.Name?.ValueToken!=""){
@@ -66,6 +69,7 @@ namespace LadonLang
                 });
             }else if(node is IfNode){
                 IfNode? _if = node as IfNode;
+                VerifyCondition(_if?.Condition);
                 _if?.IfBlock?.ForEach(block => {
                     TypeNode(block);
                 });
@@ -330,15 +334,39 @@ namespace LadonLang
             });
             return result;
         }
-
-       
-       
-        public void Scope(){}
         
-        public bool VerifyCondition(){
+        public bool VerifyCondition(List<NodeToParser> condition){
+            List<List<string>> splitedCondition=[];
+            List<string> individualCondition=[];
+            
+            //split by logic operators
+            string[] op = ["OR","AND", "DIFFERENT"];
+            if(condition is []){
+                throw new Exception("Error. condicion vacia");
+            }
+            foreach(var each in condition){
+                //each.TypeToken=="IDENTIFIER"||each.TypeToken=="NUMBER"||each.TypeToken=="STRING"||each.TypeToken=="LONG"||each.TypeToken=="ANY"
+                if(!op.Contains(each.TypeToken)){
+                    individualCondition.Add(each.TypeToken);
+
+                }else{
+                    splitedCondition.Add(individualCondition);
+                    individualCondition=[];
+                }
+                
+            }
+            //last element of condition    val op val
+            if(individualCondition is not []){
+                splitedCondition.Add(individualCondition);
+            }
+
+            //same types for each comparation
+            splitedCondition.ForEach(eachConditionSplited=>{
+                if(!CheckEachList(eachConditionSplited)){
+                    throw new Exception("Error. El tipo de la condicon no es el mismo");
+                }
+            });
             return true;
         }
-
-
     }
 }
