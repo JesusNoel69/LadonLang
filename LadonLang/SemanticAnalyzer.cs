@@ -4,12 +4,12 @@ using Microsoft.VisualBasic;
 
 namespace LadonLang
 {
-    public class SemanticAnalizer
+    public class SemanticAnalyzer
     {
         private List<SymbolTable> symbolTable;
         private List<ASTNode> ast;
         public List<string> DeclaratedVariableName=[];
-        public SemanticAnalizer(ref List<SymbolTable> symbolTable, ref AstConstructor ast){
+        public SemanticAnalyzer(ref List<SymbolTable> symbolTable, ref AstConstructor ast){
             this.symbolTable = symbolTable;
             this.ast = ast.root;
         }

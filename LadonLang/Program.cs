@@ -37,6 +37,6 @@ if(next){
     //     t.Print();
     // }  
     // SymbolTable.ShowTable(table);
-    SemanticAnalizer astSemanticAnalysis = new(ref table,ref ast);
+    SemanticAnalyzer astSemanticAnalysis = new(ref table,ref ast);
     astSemanticAnalysis.Analize();
 }
