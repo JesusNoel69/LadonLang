@@ -143,8 +143,8 @@ namespace LadonLang//LadonLangAST
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
-                    identifierOfStructure=token.TypeToken;
-                    ContainsDefinitionFor(identifierOfStructure);
+                    identifierOfStructure=token.ValueToken;
+                    ContainsDefinitionFor(identifierOfStructure, context);
                 Advance();
             }
             Advance();//skip ]
@@ -210,7 +210,7 @@ namespace LadonLang//LadonLangAST
                         ValueToken = token.ValueToken
                     };
                 identifierOfStructure=token.ValueToken;
-                ContainsDefinitionFor(identifierOfStructure);
+                ContainsDefinitionFor(identifierOfStructure, context);
                 Advance();
                 
             }
@@ -261,13 +261,20 @@ namespace LadonLang//LadonLangAST
             Advance();
             Advance();//skip (
             Parameter parameter = new();
+            //parameter adding
             while(token.TypeToken!="OUT"&&token.TypeToken!="CLOSE_PARENTHESIS"){
                 parameterToSymbolTable="";
+                string parameterType="", parameterName="";
+                List<string> contextToParameterFunction = new(context)
+                {
+                    nameFunctionToSymbolTable
+                };
                 parameter.Type=new NodeToParser
                     {
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
+                parameterType=token.ValueToken.ToUpper();
                 parameterToSymbolTable+=token.ValueToken.ToUpper();//concat type
                 Advance();//skip type
                 parameter.ParameterName=new NodeToParser
@@ -275,11 +282,22 @@ namespace LadonLang//LadonLangAST
                         TypeToken = token.TypeToken,
                         ValueToken = token.ValueToken
                     };
+                parameterName=token.ValueToken;
                 parameterToSymbolTable+=" "+token.ValueToken;//concat name of parameter
                 Advance();//skip name
                 if(token.TypeToken=="COMMA"){
                     Advance();//skip ,
                 }
+                //ad param to table
+
+                ContainsDefinitionFor(parameterName,context);
+                _table.Add(new SymbolTable{
+                    Name=parameterName,
+                    Type="IDENTIFIER",
+                    DataType=parameterType,
+                    Scope=scopeFunction,
+                    Context = new List<string>(contextToParameterFunction)
+                });
                 //parameter
                 ParametersToSymbolTable.Add(parameterToSymbolTable);
                 function.ParameterList.Add(new Parameter{
@@ -305,7 +323,7 @@ namespace LadonLang//LadonLangAST
             }
             Advance();//skip )
             Advance();//skip ---
-            ContainsDefinitionFor(nameFunctionToSymbolTable);
+            ContainsDefinitionFor(nameFunctionToSymbolTable, context);
             _table.Add(new SymbolTable{
                Name=nameFunctionToSymbolTable,
                Type="Function",
@@ -323,9 +341,10 @@ namespace LadonLang//LadonLangAST
             context.RemoveAt(context.Count-1);
             return function;
         }
-        public void ContainsDefinitionFor(string name){
+        public void ContainsDefinitionFor(string name, List<string> context){
             _table.ForEach(tableField=>{
-                if(tableField.Name==name){
+                System.Console.WriteLine();
+                if(tableField.Name==name && context==tableField.Context){
                     throw new Exception("Error. ya existe una definicion para "+name);
                 }
             });
@@ -429,7 +448,7 @@ namespace LadonLang//LadonLangAST
                         ValueToken = token.ValueToken
                     };
             string identifierOfStructure=token.ValueToken;
-            ContainsDefinitionFor(identifierOfStructure);
+            ContainsDefinitionFor(identifierOfStructure, context);
             Advance();
             Advance();//skip ]
             Advance(); // skip ---
@@ -498,8 +517,11 @@ namespace LadonLang//LadonLangAST
                     ValueToken= token.ValueToken
                 }
             };
+            string name = declaration.Identifier.Name.ValueToken;
+            ContainsDefinitionFor(name, context);
+
             Advance();//skip identifier
-            ContainsDefinitionFor(declaration.Identifier.Name.ValueToken);
+            
             _table.Add(new SymbolTable{
                 Name=declaration.Identifier.Name.ValueToken,
                 Type="IDENTIFIER",
