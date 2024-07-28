@@ -721,7 +721,8 @@ namespace LadonLang
             return true;
         }
         public static bool LogicOperator(){//
-            string[] op = ["OR","AND", "LESS_THAN", "MORE_THAN", "LESS_THAN_EQUAL", "MORE_THAN_EQUAL","DOUBLE_EQUAL"];
+            string[] op = ["OR","AND", "LESS_THAN", "MORE_THAN", "LESS_THAN_EQUAL", "MORE_THAN_EQUAL","DOUBLE_EQUAL","DIFFERENT","DIFFERENT_EQUAL"];
+            System.Console.WriteLine("el token es: "+token);
             if(op.Contains(token)){
                 Advance();
                 return true;
