@@ -149,13 +149,15 @@ namespace LadonLang//LadonLangAST
             }
             Advance();//skip ]
             Advance();//skip ---
-            _table.Add(new SymbolTable{
-               Name=identifierOfStructure,
-               Type="IF",
-               Scope=scopeIf,
-               Context=new List<string>(context),
-               ExtraData="Control"
-            });
+            if(identifierOfStructure!=""){
+                _table.Add(new SymbolTable{
+                Name=identifierOfStructure,
+                Type="IF",
+                Scope=scopeIf,
+                Context=new List<string>(context),
+                ExtraData="Control"
+                });
+            }
             if(identifierOfStructure!=""){
                 context.Add(name+"-"+identifierOfStructure);
             }
@@ -217,16 +219,17 @@ namespace LadonLang//LadonLangAST
 
             Advance();//skip ]
             Advance();//skip ---
-            _table.Add(new SymbolTable{
-               Name=identifierOfStructure,
-               Type="LOOP",
-               Scope=scopeLoop,
-               Context=new List<string>(context),
-               ExtraData="Control Structure",
-               Parameters=new List<string>(parameters)
-
-            });
             if(identifierOfStructure!=""){
+                _table.Add(new SymbolTable{
+                    Name=identifierOfStructure,
+                    Type="LOOP",
+                    DataType="Void",
+                    Scope=scopeLoop,
+                    Context=new List<string>(context),
+                    ExtraData="Control Structure",
+                    Parameters=new List<string>(parameters)
+
+                });
                 context.Add(name+"-"+identifierOfStructure);
             }
             while(token.TypeToken!="CONTEXT_TOKEN"){
@@ -295,7 +298,7 @@ namespace LadonLang//LadonLangAST
                     Name=parameterName,
                     Type="IDENTIFIER",
                     DataType=parameterType,
-                    Scope=scopeFunction,
+                    Scope="Local",
                     Context = new List<string>(contextToParameterFunction)
                 });
                 //parameter
@@ -343,8 +346,7 @@ namespace LadonLang//LadonLangAST
         }
         public void ContainsDefinitionFor(string name, List<string> context){
             _table.ForEach(tableField=>{
-                System.Console.WriteLine();
-                if(tableField.Name==name && context==tableField.Context){
+                if(tableField.Name==name && tableField.Context.SequenceEqual(context)){
                     throw new Exception("Error. ya existe una definicion para "+name);
                 }
             });
