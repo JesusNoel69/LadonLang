@@ -37,4 +37,5 @@ if(next){
     astSemanticAnalysis.Analize();
 
     CodeGenerator code = new(ref ast, ref table);
+    code.TraverseAst();
 }
