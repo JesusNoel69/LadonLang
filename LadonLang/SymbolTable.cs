@@ -2,15 +2,15 @@ namespace LadonLang
 {
     public class SymbolTable
     {
-        public string? Name{get; set;}="-";//required
-        public string? Type{get; set;}="-";
-        public string? Scope{get; set;}="-";//alcance     required
+        public string? Name{get; set;}="";//required
+        public string? Type{get; set;}="";
+        public string? Scope{get; set;}="";//alcance     required
         public string? DataType{get; set;}="";
         public List<string>? Parameters{get; set;}=[];
         public  IntPtr? OffSet{get; set;}=null;//required
         public int? Size{get; set;}=null; //required
         public List<string>? Context{get; set;}=[];
-        public string? ExtraData{get; set;}="-";
+        public string? ExtraData{get; set;}="";
         public static void ShowTable(List<SymbolTable> symbols)
         {
             Console.WriteLine("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
