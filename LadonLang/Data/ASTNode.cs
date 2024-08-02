@@ -87,7 +87,7 @@ namespace LadonLang.Data{
             Console.WriteLine($"{Indent()}Name: {Name?.TypeToken}\n{Indent()}Iter: {Iter?.TypeToken}\n{Indent()}Index: {Index?.TypeToken}");
             Console.WriteLine($"\n{Indent()}LOOP Block:");
             Block?.ForEach(eachBlock=>{
-                eachBlock.Print();
+                eachBlock?.Print();
                 });
             Console.WriteLine($"{Indent()}LOOP Block fin");
             Console.WriteLine($"{Indent()}===Fin LOOP===");
