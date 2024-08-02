@@ -26,38 +26,50 @@ namespace LadonLang
             SymbolTable.ShowTable(symbolTable);
         }
         public bool CreatedVariable(ASTNode eachNode) {
-            bool existsLeft = false, existsRight = true;
+            bool existsLeft = false, existsRight = false;
             UsageVariableNode? variable = eachNode as UsageVariableNode;
-
+            SymbolTable.ShowTable(symbolTable);
             // Verificar las variables en el lado izquierdo de la expresión
+            DeclaratedVariableName.ForEach(System.Console.WriteLine);
+            System.Console.WriteLine();
             variable?.LeftValue?.ForEach(value => {
                 if (value is Identifier) {
                     Identifier? nameOfValue = value as Identifier;
+                    System.Console.WriteLine(nameOfValue?.Name?.ValueToken);
                     existsLeft = DeclaratedVariableName.Contains(nameOfValue?.Name?.ValueToken ?? "");
                 }
             });
 
             // Verificar las variables en el lado derecho de la expresión
+            System.Console.WriteLine(variable?.RightValue?.Count);
             variable?.RightValue?.ForEach(value => {
+                
                 if (value is Identifier) {
                     Identifier? nameOfValue = value as Identifier;
-                    if (nameOfValue?.Name?.TypeToken != "NUMBER" && nameOfValue?.Name?.TypeToken != "PLUS") {
-                        if (!DeclaratedVariableName.Contains(nameOfValue?.Name?.ValueToken ?? "")) {
-                            existsRight = false;
-                        }
+                    System.Console.WriteLine(nameOfValue?.Name?.TypeToken+" es idnt");
+
+                    if (nameOfValue?.Name?.TypeToken == "IDENTIFIER" && existsRight==false ) {
+                            existsRight = DeclaratedVariableName.Contains(nameOfValue?.Name?.ValueToken ?? "");
+                    }else{
+                        existsRight=true;
                     }
+                }else if(value is InPutNode){
+                    InPutNode? val =value as InPutNode;
+
+                    existsRight=true;
                 }
             });
 
-            // System.Console.WriteLine($"existsLeft: {existsLeft}, existsRight: {existsRight}");
+            System.Console.WriteLine($"existsLeft: {existsLeft}, existsRight: {existsRight}");
             return existsRight && existsLeft;
         }
 
         public void TypeNode(ASTNode node){
             if(node is DeclarationNode){
                 DeclarationNode? declaration = node as DeclarationNode;
-                
+                System.Console.WriteLine(declaration?.Identifier?.Name?.ValueToken+" &&&&&&&&");
                 DeclaratedVariableName.Add(declaration?.Identifier?.Name?.ValueToken??"");//
+                
 
             }else if(node is LoopNode){
                 LoopNode? loop = node as LoopNode;
@@ -78,6 +90,13 @@ namespace LadonLang
                 }
             }else if(node is FunctionNode){
                 FunctionNode? function = node as FunctionNode;
+                if(function?.Name?.ValueToken!=""){
+                    DeclaratedVariableName.Add(function?.Name?.ValueToken??"");//
+                }
+                function?.ParameterList.ForEach(eachParameter=>{
+                    System.Console.WriteLine(eachParameter?.ParameterName?.ValueToken+"hplaaaaaaaaaaaa");
+                    DeclaratedVariableName.Add(eachParameter?.ParameterName?.ValueToken??"");
+                });
                 function?.Block?.ForEach(block => {
                     TypeNode(block);
                 });
@@ -134,7 +153,6 @@ namespace LadonLang
             call.Parameters.ForEach(parameters => {
                 parameters.ForEach(parameter=>{
                     Identifier? identifierParameter = parameter as Identifier;
-                    // var identifierMultiple = parameter as List<ASTNode> ;
                     if(parameters.Count==1){
                         // expressionTypesInCall.ForEach(val=>Console.WriteLine(val+" eee"));
                         if(expressionTypesInCall is not []){
@@ -143,7 +161,7 @@ namespace LadonLang
                             }
                             System.Console.WriteLine(expressionTypesInCall[0]+" valor");
                             typesInCall.Add(expressionTypesInCall[0]);
-                            expressionTypesInCall=[];
+                            // expressionTypesInCall=[];
                         }
                         expressionInParameter=0;
 
@@ -164,9 +182,6 @@ namespace LadonLang
                         && parameter is not Symbol){
                             throw new Exception("Error. Parametro no definido previamente");
                         }
-                        // List<ASTNode> n=;
-                        // System.Console.WriteLine(parameter.GetType());
-                        // EvaluateNumParameter(n);
                         if(expressionInParameter<parameters.Count){
                             expressionInParameter++;
                             string actualParameterType = EvaluateNumParameter(parameter);
@@ -243,7 +258,7 @@ namespace LadonLang
             for(int i=0; i<list.Count; i+=2){
                 if(i%2==0&&i+2<list.Count){
                     System.Console.WriteLine("list i: "+list[i]+" list i+2: "+list[i+2]);
-                    if(list[i]!=list[i+2]){
+                    if(TypeInSymbolTable(list[i])!=TypeInSymbolTable(list[i+2])){
                         return false;
                     } 
                 }
@@ -313,7 +328,7 @@ namespace LadonLang
                 "NUMBER" => "NUM",
                 "STRING" => "STR",
                 "IDENTIFIER" => TypeInSymbolTable(identifier?.Name?.ValueToken??"No Type"),
-                _=>""
+                _=>"no"
             };
         }
         public List<string> TypesOfParametersInSymbolTable(){
