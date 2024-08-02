@@ -96,7 +96,7 @@ namespace LadonLang
                     return true;
                 }
 
-            }else if (token == "NUMBER" || token == "DECIMAL_NUMBER" || token =="STRING") ///token == "IDENTIFIER" || 
+            }else if (token == "NUMBER" || token == "DECIMAL_NUMBER" || token =="STRING" || token=="INDEX"||token=="ITER") ///token == "IDENTIFIER" || 
             {
                 Advance();
                 return true;
@@ -730,7 +730,7 @@ namespace LadonLang
             return false;
         }
         public static  bool Val(){
-            string[] tipeValues = ["NUMBER", "DECIMAL_NUMBER", "STRING", "IDENTIFIER"];
+            string[] tipeValues = ["NUMBER", "DECIMAL_NUMBER", "STRING", "IDENTIFIER", "ITER", "INDEX"];
             if(tipeValues.Contains(token)){
                 Advance();
                 return true;
