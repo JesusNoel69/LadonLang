@@ -45,19 +45,19 @@ namespace LadonLang//LadonLangAST
                 if(token.TypeToken=="OPEN_CORCHETES"){
                     Advance();//skip [
                     if(token.TypeToken=="IF"){
-                        blocks=If("");
+                        blocks=If("IF");
                     }
                     else  if(token.TypeToken=="LOOP"){
-                        blocks=Loop("");
+                        blocks=Loop("LOOP");
                     }else  if(token.TypeToken=="READ"){
                         blocks=InPut();
                     }else  if(token.TypeToken=="WRITE"){
                         blocks=OutPut();
                     }else  if(token.TypeToken=="ENTITY"){
-                        blocks=Entity("");
+                        blocks=Entity("ENTITY");
                     }
                 }else  if(token.TypeToken=="FN"){
-                    blocks=Function("");
+                    blocks=Function("FN");
                 }else if(token.TypeToken=="LONG"||token.TypeToken=="ANY"||token.TypeToken=="DEFAULT"||token.TypeToken=="NUM"||token.TypeToken=="STR"){
                     blocks = Declaration();
                 }else if(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
@@ -292,8 +292,7 @@ namespace LadonLang//LadonLangAST
                     Advance();//skip ,
                 }
                 //ad param to table
-
-                ContainsDefinitionFor(parameterName,context);
+                ContainsDefinitionFor(parameterName,contextToParameterFunction);
                 _table.Add(new SymbolTable{
                     Name=parameterName,
                     Type="IDENTIFIER",
@@ -301,6 +300,7 @@ namespace LadonLang//LadonLangAST
                     Scope="Local",
                     Context = new List<string>(contextToParameterFunction)
                 });
+
                 //parameter
                 ParametersToSymbolTable.Add(parameterToSymbolTable);
                 function.ParameterList.Add(new Parameter{
@@ -326,7 +326,6 @@ namespace LadonLang//LadonLangAST
             }
             Advance();//skip )
             Advance();//skip ---
-            ContainsDefinitionFor(nameFunctionToSymbolTable, context);
             _table.Add(new SymbolTable{
                Name=nameFunctionToSymbolTable,
                Type="Function",
@@ -335,7 +334,10 @@ namespace LadonLang//LadonLangAST
                Parameters=ParametersToSymbolTable,
                 Context = new List<string>(context)
             });
+            System.Console.WriteLine(name+"-"+nameFunctionToSymbolTable);
             context.Add(name+"-"+nameFunctionToSymbolTable);
+            System.Console.WriteLine(context.Last());
+            ContainsDefinitionFor(nameFunctionToSymbolTable, context);
             while(token.TypeToken!="CONTEXT_TOKEN"){
                 function.Block?.Add(ReturnBlock("FN"));
                 Advance();//skip ---
@@ -347,6 +349,14 @@ namespace LadonLang//LadonLangAST
         public void ContainsDefinitionFor(string name, List<string> context){
             _table.ForEach(tableField=>{
                 if(tableField.Name==name && tableField.Context.SequenceEqual(context)){
+                    System.Console.WriteLine("table name: "+tableField.Name+" name: "+name);
+                    System.Console.WriteLine("table context: ");
+                    tableField.Context.ForEach(System.Console.WriteLine);
+                    System.Console.WriteLine("context: ");
+                    context.ForEach(System.Console.WriteLine);
+
+
+
                     throw new Exception("Error. ya existe una definicion para "+name);
                 }
             });
@@ -523,16 +533,7 @@ namespace LadonLang//LadonLangAST
             ContainsDefinitionFor(name, context);
 
             Advance();//skip identifier
-            
-            _table.Add(new SymbolTable{
-                Name=declaration.Identifier.Name.ValueToken,
-                Type="IDENTIFIER",
-                DataType=declaration.Type.TypeToken,
-                Scope=scopeFlow,
-                Context=new List<string>(context)
-            });
-
-        
+            string extraData="";
             if(token.TypeToken=="EQUAL"){
                 Advance();//skip = 
                 //
@@ -545,15 +546,18 @@ namespace LadonLang//LadonLangAST
                                 ValueToken=token.ValueToken
                             }
                         });
+                        extraData = "READ";
                         Advance();//skip Read
                     }
                     Advance();//skip ]
                 }
+                
+
                 while(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
-                    token.TypeToken=="STRING"||token.TypeToken=="IDENTIFIER"){
+                    token.TypeToken=="STRING"||token.TypeToken=="IDENTIFIER" || token.TypeToken=="INDEX" ||token.TypeToken=="ITER"){
 
                     if(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
-                        token.TypeToken=="STRING"){
+                        token.TypeToken=="STRING"||token.TypeToken=="INDEX" ||token.TypeToken=="ITER"){
                         declaration.Value?.Add(
                             new Identifier{
                                 Name = new NodeToParser{
@@ -580,8 +584,10 @@ namespace LadonLang//LadonLangAST
                                     }
                                 });
                                 Advance();//skip identifier 
-                                declaration.Value?.Add(identifier);
                             }
+                                declaration.Value?.Add(identifier);
+                        }else{
+                                declaration.Value?.Add(identifier);
                         }
                     }
                     if(token.TypeToken=="SLASH"||token.TypeToken=="PLUS"||token.TypeToken=="MINUS"
@@ -597,13 +603,20 @@ namespace LadonLang//LadonLangAST
                 }
                 //
             }    
-            
+            _table.Add(new SymbolTable{
+                    Name=declaration.Identifier.Name.ValueToken,
+                    Type="IDENTIFIER",
+                    DataType=declaration.Type.TypeToken,
+                    Scope=scopeFlow,
+                    ExtraData=extraData,
+                    Context=new List<string>(context)
+                });
             return declaration;
         }
         public ASTNode UseVariable(){
             UsageVariableNode variable = new();
-            while(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
-                token.TypeToken=="STRING"||token.TypeToken=="IDENTIFIER"){
+            while(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"|| 
+                token.TypeToken=="STRING"||token.TypeToken=="IDENTIFIER"|| token.TypeToken=="OPEN_CORCHETES"){
                 if(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
                     token.TypeToken=="STRING"){
                     variable.LeftValue?.Add(
@@ -717,12 +730,13 @@ namespace LadonLang//LadonLangAST
 
             if(token.TypeToken=="EQUAL"){
                 Advance();//skip = 
-                while(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
-                    token.TypeToken=="STRING"||token.TypeToken=="IDENTIFIER"){
+
+                while(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||token.TypeToken=="INDEX" ||token.TypeToken=="ITER"||
+                    token.TypeToken=="STRING"||token.TypeToken=="IDENTIFIER" || token.TypeToken=="OPEN_CORCHETES"){
 
                     if(token.TypeToken=="NUMBER"||token.TypeToken=="DECIMAL_NUMBER"||
-                        token.TypeToken=="STRING"){
-                        variable.RightValue?.Add(
+                        token.TypeToken=="STRING" ||token.TypeToken=="INDEX" ||token.TypeToken=="ITER"){
+                        variable?.RightValue?.Add(
                             new Identifier{
                             Name = new NodeToParser{
                                 TypeToken = token.TypeToken,
@@ -730,7 +744,23 @@ namespace LadonLang//LadonLangAST
                             }
                         });
                         Advance();//skip value
-                    }else if(token.TypeToken=="IDENTIFIER"){
+                    }
+                    else if(token.TypeToken=="OPEN_CORCHETES"){
+                        Advance();//skip [
+                    System.Console.WriteLine(token.TypeToken+"+++++++++=use?");
+
+                        InPutNode input = new(){
+                            Value = new NodeToParser{
+                                TypeToken = token.TypeToken,
+                                ValueToken= token.ValueToken
+                            }
+                        };
+                        Advance(); //skip READ
+                        Advance(); //skip ]
+                        variable?.RightValue?.Add(input);
+                    }
+                    
+                    else if(token.TypeToken=="IDENTIFIER"){
                         Identifier identifier = new(){
                             Name = new NodeToParser{
                                 TypeToken = token.TypeToken,
@@ -751,10 +781,10 @@ namespace LadonLang//LadonLangAST
                                     }
                                 });
                                 Advance();//skip identifier 
-                                variable.RightValue?.Add(identifier);
+                                variable?.RightValue?.Add(identifier);
                             }
                         }else{
-                            variable.RightValue?.Add(identifier);
+                            variable?.RightValue?.Add(identifier);
                         }
 
                     }
@@ -762,7 +792,7 @@ namespace LadonLang//LadonLangAST
                     if(token.TypeToken=="SLASH"||token.TypeToken=="PLUS"||token.TypeToken=="MINUS"
                     ||token.TypeToken=="ASTERISK"){
 
-                        variable.RightValue?.Add(new Symbol{
+                        variable?.RightValue?.Add(new Symbol{
                             NameSymbol=new(){
                                 TypeToken = token.TypeToken,
                                 ValueToken = token.ValueToken
