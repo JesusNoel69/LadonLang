@@ -2,11 +2,12 @@ using System.Reflection;
 using LadonLang.Data;
 namespace LadonLang
 {
-    public class CodeGenerator(ref AstConstructor ast, ref List<SymbolTable> symbolTable)
+    public class CodeGenerator(ref AstConstructor ast, ref List<SymbolTable> symbolTable, string path)
     {
         private readonly List<ASTNode> ast = ast.root;
         private List<SymbolTable> symbolTable = symbolTable;
         private List<string> context=[];
+        private string path = path;
         public const string l ="\n";
         private string directives=$"#include <iostream> {l}#include <fstream>{l}#include <string>{l}using namespace std;{l}";
         //public string Header =$"void _Read(const string& , const string &);{l}template<typename T>{l} T _Read();{l}void _Write(const string &);{l}";
@@ -15,6 +16,15 @@ namespace LadonLang
         public string principalBlock="";
         // static string templateFunctions=$"template<typename T>{l}T _Read(){l} {{ {l}T inp;{l}cin>> inp;{l}return inp;{l} }}{l}template<>{l}string _Read(){l} {{ {l}string inp;{l}cin>> inp;{l}return inp;{l} }}{l}";
         public string functions=$"void _Write(const string &url){{ {l}ifstream file(url);{l}if (!file) {{ {l}cerr << \"Error al abrir el archivo para leer.\\n\";{l}return;{l} }}{l} string line;{l} while (getline(file, line)) {{ {l}cout << line << '\\n';{l} }}{l}file.close();{l} }}{l}void _Read(const string& content,const string &Url) {{ {l}ofstream file(Url, ios::app);{l}if (!file) {{ {l}cerr << \"Error al abrir el archivo para escribir.\"; {l}return;{l} }}{l}file << content << '\\n';{l}file.close(); {l} }} {l}";
+        public void ShowLowCode(){
+            Console.WriteLine(directives);
+            Console.WriteLine();
+            Console.WriteLine(Header);
+            Console.WriteLine();
+            Console.WriteLine(principalBlock);
+            Console.WriteLine();
+            Console.WriteLine(functions);
+        }
         public void TraverseAst(){
             MakeHeader();
             principalBlock+=$"int main() {{ {l}";
@@ -22,30 +32,24 @@ namespace LadonLang
             foreach(ASTNode eachNode in ast){
                 TypeNode(eachNode,"");
             }
-            principalBlock+=$"return 0;{l} }}{l}";
-
-            Console.WriteLine(directives);
-            // Console.WriteLine("---fin diirectives---");
-            Console.WriteLine(Header);
-            // Console.WriteLine("---fin header---");
-            System.Console.WriteLine(principalBlock);
-            System.Console.WriteLine();
-            System.Console.WriteLine(functions);
+            principalBlock+=$"cout<<endl;system(\"pause\");return 0;{l} }}{l}";
             try
             {
-                using (StreamWriter fileCPP = new StreamWriter(@"C:/Users/hp/Documents/Proyectos/Language Programing/LadonLang/Archives/main.cpp"))
+                using (StreamWriter fileCPP = new(@$"{path}/main.cpp"))
                 {
                     fileCPP.WriteLine(directives);
                     fileCPP.Write(Header);
                     fileCPP.Write(principalBlock);
                     fileCPP.Write(functions);
                 }
-                Console.WriteLine("Archivo escrito exitosamente.");
+                Console.WriteLine("Conversion a codigo intermedio correcta.");
             }
             catch (Exception e)
             {
-                Console.WriteLine("Error al escribir en el archivo: " + e.Message);
+                Console.WriteLine("Error en la conversion: " + e.Message);
             }
+
+
 
         }
         public void TypeNode(ASTNode node, string whereBlock){
@@ -139,7 +143,6 @@ namespace LadonLang
                 functions+=$"}} {l}";
             }else{
                 if(_if.Name?.ValueToken!=null){
-                    System.Console.WriteLine("H1");
                     //make as a function
                     principalBlock+=$"{_if.Name.ValueToken}();{l}";
                     functions+=$"void {_if.Name.ValueToken}() {{ {l}";
@@ -169,9 +172,8 @@ namespace LadonLang
             string _while=$"while(true){{ {l} ";
             if(whereBlock!="function"){
                 if(loop.Iter?.ValueToken!=null){
-                    _for+=$"int Index = {loop.Index?.ValueToken}; Index<{loop.Iter.ValueToken}; Index++) {{ {l}";
+                    _for+=$"int Index = {loop.Index?.ValueToken}; Index<={loop.Iter.ValueToken}; Index++) {{ {l}";
                     if(loop?.Name?.ValueToken!=null){
-                        System.Console.WriteLine("loop 1");
                         principalBlock+=$"{loop?.Name?.ValueToken}(); {l}";
                         functions+=$"void {loop?.Name?.ValueToken}() {{ {l}";
                         functions+=_for;
@@ -180,7 +182,6 @@ namespace LadonLang
                         });
                         functions+=$"}} {l} }} {l}";
                     }else{
-                        System.Console.WriteLine("loop 2");
                         principalBlock+=_for;
                         loop?.Block?.ForEach(block=>{
                             TypeNode(block,whereBlock);
@@ -189,7 +190,6 @@ namespace LadonLang
                     }
                 }else{
                     if(loop?.Name?.ValueToken!=null){
-                        System.Console.WriteLine("loop 3");
                         principalBlock+=$"{loop?.Name?.ValueToken}(); {l}";
                         functions+=$"void {loop?.Name?.ValueToken}() {{ {l}";
                         functions+=_while;
@@ -198,7 +198,6 @@ namespace LadonLang
                         });
                         functions+=$"}} {l} }} {l}";
                     }else{
-                        System.Console.WriteLine("loop 4");
                         principalBlock+=_while;
                         loop?.Block?.ForEach(block=>{
                             TypeNode(block,whereBlock);
@@ -207,7 +206,7 @@ namespace LadonLang
                     }
                 }
             }else {
-                _for+=$"int Index = {loop.Index?.ValueToken}; Index<{loop.Iter.ValueToken}; Index++) {{ {l}";
+                _for+=$"int Index = {loop.Index?.ValueToken}; Index<={loop.Iter?.ValueToken}; Index++) {{ {l}";
 
                 if(loop.Iter?.ValueToken!=null){
                     functions+=_for;
@@ -250,7 +249,6 @@ namespace LadonLang
                     }
                     symbolTable.ForEach(eachField=>{
                         if(eachField.Name==function?.ReturnValue.ValueToken && eachField.Scope=="Global"){
-                            Console.WriteLine("entro en el return value con: "+function?.ParameterList?.Count);
                             parametersFunction+=$", {TypeOfInstruction(eachField.DataType)} &{function?.ReturnValue.ValueToken}"; //typeOfInstruction(eachField.DataType)
 
 
@@ -281,7 +279,6 @@ namespace LadonLang
             string parametersFunction ="";
             string? type="";
             for(int parameter=0; parameter<parameters.Count; parameter++){
-                // System.Console.WriteLine("cada parametro: "+function?.ParameterList[parameter].ParameterName?.ValueToken);
                 //se debe buscar en la tabla ya que el tipo lo marca como void por ser identifier
                 symbolTable.ForEach(eachName=>{
                     if(eachName.Name==parameters[parameter].ParameterName?.ValueToken){
@@ -307,7 +304,6 @@ namespace LadonLang
                     principalBlock+=$"cout<<{value};{l}cin.ignore();{l}cin.get();{l}";
                 }
             }else{
-                System.Console.WriteLine("url: "+inPut?.Url?.ValueToken + "val: "+inPut?.Value?.ValueToken);
                 if(inPut?.Url?.ValueToken=="" && inPut?.Value?.ValueToken==null){
                     
                     functions+="_Read();";
@@ -328,7 +324,6 @@ namespace LadonLang
                     principalBlock+=$"cout<<{value};{l}";
                 }
             }else{
-                System.Console.WriteLine("url: "+outPut?.Url?.ValueToken + "val: "+outPut?.Value?.ValueToken);
                 if(url!=null){
                     functions+=$"_Write({url});{l}";
                 }else if(value!=null){
@@ -337,16 +332,13 @@ namespace LadonLang
             }
         }
         public void MakeFlowInstruction(FlowNode flow, string whereBlock){
-            System.Console.WriteLine(flow?.Identifier?.ValueToken+"hyhuh");
             if(flow?.Identifier?.ValueToken==null){
-                System.Console.WriteLine("es solo un return");
                 if(whereBlock=="function"){
                     functions+=$"return;{l}";
                 }else{
                     principalBlock+=$"return;{l}";
                 }
             }else{
-                System.Console.WriteLine("es un return con una llamada");
                 if(whereBlock=="function"){
                     functions+=$"{flow?.Identifier?.ValueToken}();{l}return;{l}";
                 }else{
@@ -358,14 +350,16 @@ namespace LadonLang
         }
         public void MakeDeclaration(DeclarationNode declaration, string whereBlock){
             //  declaration
-             //global variables
+            //global variables
             if(IsGlobalvariable(declaration?.Identifier?.Name?.ValueToken??"")){
                 Identifier? aValue;
                 Symbol? aSymbol;
                 Header+=$"{TypeOfInstruction(declaration?.Type?.TypeToken??"")} {declaration?.Identifier?.Name?.ValueToken};{l}";
                 if(declaration?.Value?.Count>0){
-                    principalBlock+=$"{declaration?.Identifier?.Name?.ValueToken} =";//Header
-                
+                    if(declaration?.Value?.Count>0 && declaration?.Value?.First() is not InPutNode){
+                        principalBlock+=$"{declaration?.Identifier?.Name?.ValueToken}";//Header
+                        principalBlock+=" =";
+                    }
                     declaration?.Value?.ForEach(eachValue=>{
                         if(eachValue is Identifier){
                             aValue = eachValue as Identifier;
@@ -374,7 +368,8 @@ namespace LadonLang
                             aSymbol = eachValue as Symbol;
                             principalBlock+=$" {aSymbol?.NameSymbol?.ValueToken}";
                         }else if(eachValue is InPutNode){
-                            principalBlock+=$"_Read<{TypeOfInstruction(declaration?.Type?.TypeToken??"")}>()";
+                            principalBlock+=$"cin>>{declaration?.Identifier?.Name?.ValueToken}";
+
                         }
                     });
                     principalBlock+=$";{l}";
@@ -387,9 +382,12 @@ namespace LadonLang
                 InPutNode? inPut;
                 if(whereBlock!="function"){
                     principalBlock+=$"{TypeOfInstruction(declaration?.Type?.TypeToken??"")} {declaration?.Identifier?.Name?.ValueToken}";
-                    if(declaration?.Value?.Count>0){
-                        principalBlock+=" =";
+                    if(declaration?.Value?.Count>0 && declaration?.Value?.First() is not InPutNode){
+                        functions+=" =";
+                    }else{
+                        functions+=";";
                     }
+                    
                     declaration?.Value?.ForEach(eachValue=>{
                         if(eachValue is Identifier){
                             aValue = eachValue as Identifier;
@@ -399,16 +397,18 @@ namespace LadonLang
                             principalBlock+=$" {aSymbol?.NameSymbol?.ValueToken}";
                         }else if(eachValue is InPutNode){
                             inPut = eachValue as InPutNode;
-                            System.Console.WriteLine("entro en el input");
-                            principalBlock+=$"_Read<{TypeOfInstruction(declaration?.Type?.TypeToken??"")}>()";
+                            principalBlock+=$"cin>>{declaration?.Identifier?.Name?.ValueToken}";
                         }   
                     });
                     principalBlock+=$";{l}"; 
                 }else{
                     functions+=$"{TypeOfInstruction(declaration?.Type?.TypeToken??"")} {declaration?.Identifier?.Name?.ValueToken}";
-                    if(declaration?.Value?.Count>0){
+                    if(declaration?.Value?.Count>0 && declaration?.Value?.First() is not InPutNode){
                         functions+=" =";
+                    }else{
+                        functions+=";";
                     }
+
                     declaration?.Value?.ForEach(eachValue=>{
                         if(eachValue is Identifier){
                             aValue = eachValue as Identifier;
@@ -419,9 +419,7 @@ namespace LadonLang
                         }
                         else if(eachValue is InPutNode){
                             inPut = eachValue as InPutNode;
-                            Console.WriteLine("entro en el input de functon");
-                            // functions+=$"_Read<{TypeOfInstruction(declaration?.Type?.TypeToken??"")}>()";
-                            functions+=$"";
+                            functions+=$"cin>>{declaration?.Identifier?.Name?.ValueToken}";
                         }
                     });
                     functions+=$";{l}";
@@ -484,12 +482,7 @@ namespace LadonLang
                             principalBlock+=$" {rightSymbol?.NameSymbol?.ValueToken}";
                         }else if(eachValue is InPutNode){
                             inputRight = eachValue as InPutNode;
-                            /////////////////////////////////////////////////////////////////////////////////////////////////////
-                            ///ToDo: hacer una pila que me guarde en que contexto me encuentro
-                            ///comparar el valueToken de leftValue con el name de la tabla de simbolos en una funcion para ver si esta la variable
-                            /// ahora se su context para corroborar que sean la miisma variable y dicha funcon devuelve  su tipo y se reemplazara aqui//
                             // principalBlock+=$"_Read<{TypeOfInstruction(leftValue?.Name.TypeToken??"")}>()";
-
                             principalBlock+=$"cin>>{leftValue?.Name?.ValueToken}";
                         }
                     });
@@ -531,7 +524,6 @@ namespace LadonLang
             {
                 parametersOfCall = parametersOfCall.Substring(0, parametersOfCall.Length - 2);
             }
-            Console.WriteLine(parametersOfCall);
             if(whereBlock=="function"){
                 functions+=$"{nameOfCall}({parametersOfCall});{l}";
             }else{
