@@ -15,39 +15,27 @@ namespace LadonLang
         }
         public void Analize(){
             foreach(ASTNode eachNode in ast){
-                eachNode.Print();
-                Console.WriteLine();
-            }
-            foreach(ASTNode eachNode in ast){
 
                 TypeNode(eachNode);
             }
-            
-            SymbolTable.ShowTable(symbolTable);
+            // SymbolTable.ShowTable(symbolTable);
         }
         public bool CreatedVariable(ASTNode eachNode) {
             bool existsLeft = false, existsRight = false;
             UsageVariableNode? variable = eachNode as UsageVariableNode;
-            SymbolTable.ShowTable(symbolTable);
             // Verificar las variables en el lado izquierdo de la expresión
-            DeclaratedVariableName.ForEach(System.Console.WriteLine);
-            System.Console.WriteLine();
             variable?.LeftValue?.ForEach(value => {
                 if (value is Identifier) {
                     Identifier? nameOfValue = value as Identifier;
-                    System.Console.WriteLine(nameOfValue?.Name?.ValueToken);
                     existsLeft = DeclaratedVariableName.Contains(nameOfValue?.Name?.ValueToken ?? "");
                 }
             });
 
             // Verificar las variables en el lado derecho de la expresión
-            System.Console.WriteLine(variable?.RightValue?.Count);
             variable?.RightValue?.ForEach(value => {
                 
                 if (value is Identifier) {
                     Identifier? nameOfValue = value as Identifier;
-                    System.Console.WriteLine(nameOfValue?.Name?.TypeToken+" es idnt");
-
                     if (nameOfValue?.Name?.TypeToken == "IDENTIFIER" && existsRight==false ) {
                             existsRight = DeclaratedVariableName.Contains(nameOfValue?.Name?.ValueToken ?? "");
                     }else{
@@ -60,14 +48,13 @@ namespace LadonLang
                 }
             });
 
-            System.Console.WriteLine($"existsLeft: {existsLeft}, existsRight: {existsRight}");
+            // System.Console.WriteLine($"existsLeft: {existsLeft}, existsRight: {existsRight}");
             return existsRight && existsLeft;
         }
 
         public void TypeNode(ASTNode node){
             if(node is DeclarationNode){
                 DeclarationNode? declaration = node as DeclarationNode;
-                System.Console.WriteLine(declaration?.Identifier?.Name?.ValueToken+" &&&&&&&&");
                 DeclaratedVariableName.Add(declaration?.Identifier?.Name?.ValueToken??"");//
                 
 
@@ -94,7 +81,6 @@ namespace LadonLang
                     DeclaratedVariableName.Add(function?.Name?.ValueToken??"");//
                 }
                 function?.ParameterList.ForEach(eachParameter=>{
-                    System.Console.WriteLine(eachParameter?.ParameterName?.ValueToken+"hplaaaaaaaaaaaa");
                     DeclaratedVariableName.Add(eachParameter?.ParameterName?.ValueToken??"");
                 });
                 function?.Block?.ForEach(block => {
@@ -159,7 +145,6 @@ namespace LadonLang
                             if(!CompareTypes(expressionTypesInCall)){
                                 throw new Exception("Error. Tipo de parametro no valido en la llamada a funcion");
                             }
-                            System.Console.WriteLine(expressionTypesInCall[0]+" valor");
                             typesInCall.Add(expressionTypesInCall[0]);
                             // expressionTypesInCall=[];
                         }
@@ -194,8 +179,6 @@ namespace LadonLang
 
                 });
             });
-            System.Console.WriteLine("in call: "+typesInCall.Count+"int table"+numParametersInTable);
-            typesInCall.ForEach(Console.WriteLine);
             if(typesInCall.Count!=numParametersInTable){
                 throw new Exception("Error. No existe una funcion con ese numero de parametros");
             }
@@ -225,7 +208,7 @@ namespace LadonLang
                     result=false;
                 }
             });
-            System.Console.WriteLine(result);
+            // System.Console.WriteLine(result);
             return result;
         }
         public bool NameNotIntTable(string name){
@@ -257,7 +240,7 @@ namespace LadonLang
 
             for(int i=0; i<list.Count; i+=2){
                 if(i%2==0&&i+2<list.Count){
-                    System.Console.WriteLine("list i: "+list[i]+" list i+2: "+list[i+2]);
+                    // System.Console.WriteLine("list i: "+list[i]+" list i+2: "+list[i+2]);
                     if(TypeInSymbolTable(list[i])!=TypeInSymbolTable(list[i+2])){
                         return false;
                     } 
@@ -312,12 +295,6 @@ namespace LadonLang
                     listOfTypesLeft.Add(op?.NameSymbol?.TypeToken ?? "");
                 }
             });
-
-            Console.WriteLine("mis tipos left");
-            listOfTypesLeft.ForEach(Console.WriteLine);
-            Console.WriteLine("mis tipos right");
-            listOfTypesRight.ForEach(Console.WriteLine);
-
             return(listOfTypesLeft, listOfTypesRight);
 
         }        
@@ -334,7 +311,7 @@ namespace LadonLang
         public List<string> TypesOfParametersInSymbolTable(){
             List<string> TypesInSymbolTable=[];
             symbolTable.ForEach(fieldTable=>{
-                fieldTable.Parameters.ForEach(eachParameter=>{
+                fieldTable?.Parameters?.ForEach(eachParameter=>{
                     TypesInSymbolTable.Add(eachParameter.Split(' ')[0]);
                 });
             });

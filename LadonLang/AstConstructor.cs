@@ -334,9 +334,7 @@ namespace LadonLang//LadonLangAST
                Parameters=ParametersToSymbolTable,
                 Context = new List<string>(context)
             });
-            System.Console.WriteLine(name+"-"+nameFunctionToSymbolTable);
             context.Add(name+"-"+nameFunctionToSymbolTable);
-            System.Console.WriteLine(context.Last());
             ContainsDefinitionFor(nameFunctionToSymbolTable, context);
             while(token.TypeToken!="CONTEXT_TOKEN"){
                 function.Block?.Add(ReturnBlock("FN"));
@@ -349,14 +347,6 @@ namespace LadonLang//LadonLangAST
         public void ContainsDefinitionFor(string name, List<string> context){
             _table.ForEach(tableField=>{
                 if(tableField.Name==name && tableField.Context.SequenceEqual(context)){
-                    System.Console.WriteLine("table name: "+tableField.Name+" name: "+name);
-                    System.Console.WriteLine("table context: ");
-                    tableField.Context.ForEach(System.Console.WriteLine);
-                    System.Console.WriteLine("context: ");
-                    context.ForEach(System.Console.WriteLine);
-
-
-
                     throw new Exception("Error. ya existe una definicion para "+name);
                 }
             });
@@ -747,8 +737,6 @@ namespace LadonLang//LadonLangAST
                     }
                     else if(token.TypeToken=="OPEN_CORCHETES"){
                         Advance();//skip [
-                    System.Console.WriteLine(token.TypeToken+"+++++++++=use?");
-
                         InPutNode input = new(){
                             Value = new NodeToParser{
                                 TypeToken = token.TypeToken,

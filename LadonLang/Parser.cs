@@ -18,7 +18,7 @@ namespace LadonLang
             _index++;
             if (_index < _tokenVector.Count)
             {
-                System.Console.WriteLine(token);
+                // System.Console.WriteLine(token);
                 token = _tokenVector[_index].tipoToken;
                 //
                 _currentToken.ValueToken = _tokenVector[_index].token;
@@ -37,7 +37,7 @@ namespace LadonLang
             }
             else
             {
-                System.Console.WriteLine(token);
+                // System.Console.WriteLine(token);
                 token = ""; // Evitar accesos fuera de rango
             }
         }
@@ -373,7 +373,6 @@ namespace LadonLang
         }
 
         public static bool FunctionCall(){
-            // System.Console.WriteLine("mi after es: "+afterToken+" y me actual es: "+token);
            //el afterToken vacio es para cuando la llamada de funcion sea el primer caso, posible refactorizacion
            if(token=="IDENTIFIER"&& afterToken=="OPEN_PARENTHESIS" || afterToken==""){//&& afterToken=="OPEN_PARENTHESIS"                
                 Advance();
@@ -621,7 +620,6 @@ namespace LadonLang
                                     {
                                         Advance();
                                         StatementsBody();
-                                        System.Console.WriteLine("mi valor es: "+token);
                                         if (token == "CONTEXT_TOKEN")
                                         {
                                             Advance();
@@ -722,7 +720,6 @@ namespace LadonLang
         }
         public static bool LogicOperator(){//
             string[] op = ["OR","AND", "LESS_THAN", "MORE_THAN", "LESS_THAN_EQUAL", "MORE_THAN_EQUAL","DOUBLE_EQUAL","DIFFERENT","DIFFERENT_EQUAL"];
-            System.Console.WriteLine("el token es: "+token);
             if(op.Contains(token)){
                 Advance();
                 return true;

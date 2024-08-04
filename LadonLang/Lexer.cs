@@ -1,5 +1,3 @@
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.CompilerServices;
 using LadonLang.Data;
 namespace LadonLang
 {
@@ -73,7 +71,6 @@ namespace LadonLang
                     && _tokenVector[i].token.Length==1){
                 val = _tokenVector[i].token[0].ToString() + _tokenVector[i+1].token[0].ToString()+_tokenVector[i+2].token[0].ToString();
                 i+=2;
-                // Console.WriteLine(val);
                 auxToken.Add(new Node(j,val,"CONTEXT_TOKEN",_tokenVector[i].nLineas));
                 }else{
                     if(Array.Exists(_composedOperands, elemento => elemento == _tokenVector[i].token[0])
@@ -81,7 +78,6 @@ namespace LadonLang
                     && _tokenVector[i].token.Length==1){
                         val = _tokenVector[i].token[0].ToString() + _tokenVector[i+1].token[0].ToString();
                         i++;
-                        Console.WriteLine(val);
                         auxToken.Add(new Node(j,val,ComposedOperators.TypeComposedOperator(val),_tokenVector[i].nLineas));
                     }else{
                         auxToken.Add(new Node(j,_tokenVector[i].token,_tokenVector[i].tipoToken,_tokenVector[i].nLineas));
