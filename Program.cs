@@ -1,0 +1,38 @@
+using System.Runtime.InteropServices;
+using LadonLang.Data;
+using LadonLang.Lexer;
+using LadonLang.Parser;
+/*
+foreach (var row in TransitonMatrix.Matrix)
+{
+    foreach (var col in row)
+    {
+        System.Console.Write(col.ToString()+", ");
+    }
+    System.Console.WriteLine();
+}
+*/
+string? line;
+string currentDirectory="";
+string archiveName = "testFile.ll";
+int numLine=1;
+bool next=true;
+currentDirectory=Directory.GetCurrentDirectory();
+currentDirectory=currentDirectory.Replace("\\", "/");
+currentDirectory+="/Test";
+StreamReader archive = new(@$"{currentDirectory}/{archiveName}");
+Console.WriteLine("el directtorio es: "+currentDirectory);
+while((line = archive.ReadLine())!= null ){
+    next=Lexer.Scan(line,numLine++);
+}
+
+Console.WriteLine(Lexer.TokenVector.Count());
+
+foreach (var item in Lexer.TokenVector.Where(x=>x.TokenType!="SPACE"))//Lexer.TokenVector)
+{
+    Console.WriteLine("¡"+item.TokenType.ToString()+"¡");
+}
+
+var vector = Lexer.TokenVector;
+
+Console.WriteLine( Parser.Parse([.. vector.Where(x=>x.TokenType!="SPACE")]));
