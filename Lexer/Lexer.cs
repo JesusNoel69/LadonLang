@@ -21,12 +21,12 @@ namespace LadonLang.Lexer
         private static int _state=0;
         private static string _token="";
         private static string _tokenType="";
-        public static List<Node> TokenVector {get;} = [];
+        public static List<Token> TokenVector {get;} = [];
         private static int _nodeId =0;
         public static bool AcceptHandler(int _state) => FinalStates.ContainsKey(_state);
         public static bool ErrorHandler(int _state)=> ErrorStates.ContainsKey(_state);
         
-        public static bool Scan(string? input, int line)
+        public static bool Scan(string? input, int line, int column)
         {
             //Console.WriteLine("¡" + input + "¡");
             if (input == null) return false;
@@ -44,7 +44,7 @@ namespace LadonLang.Lexer
                         // Close String
                         _insideString = false;
                         _nodeId++;
-                        Node n = new(_nodeId, _token, "STRING", line);
+                        Token n = new(_nodeId, _token, "STRING", line, column);
                         TokenVector.Add(n);
                         ResetTokenInfo();
                     }
@@ -65,7 +65,7 @@ namespace LadonLang.Lexer
                         }
                         _insideChar = false;
                         _nodeId++;
-                        Node n = new(_nodeId, _token, "CHARACTER", line);
+                        Token n = new(_nodeId, _token, "CHARACTER", line, column);
                         TokenVector.Add(n);
                         ResetTokenInfo();
                     }
@@ -101,7 +101,7 @@ namespace LadonLang.Lexer
                     _tokenType = FinalStates[_state];
                     //_token = _token.Trim();
                     //System.Console.WriteLine(_token);
-                    Node newNode = new(_nodeId, _token, _tokenType, line);
+                    Token newNode = new(_nodeId, _token, _tokenType, line, column);
                     TokenVector.Add(newNode);
 
                     ResetTokenInfo();
@@ -112,7 +112,7 @@ namespace LadonLang.Lexer
                         string delimLexeme = ch.ToString();
                         _tokenType = DelimiterType(ch);
 
-                        newNode = new(_nodeId, delimLexeme, _tokenType, line);
+                        newNode = new(_nodeId, delimLexeme, _tokenType, line, column);
                         TokenVector.Add(newNode);
                         ResetTokenInfo();
                     }
@@ -131,7 +131,7 @@ namespace LadonLang.Lexer
                         string delimLexeme = ch.ToString();
                         _tokenType = DelimiterType(ch);
 
-                        Node newNode = new(_nodeId, delimLexeme, _tokenType, line);
+                        Token newNode = new(_nodeId, delimLexeme, _tokenType, line, column);
                         TokenVector.Add(newNode);
                     //}
 
@@ -156,13 +156,13 @@ namespace LadonLang.Lexer
                 {
                     _nodeId++;
                     _tokenType = FinalStates[_state];
-                    Node newNode = new(_nodeId, _token, _tokenType, line); //_token.Trim()
+                    Token newNode = new(_nodeId, _token, _tokenType, line, column); //_token.Trim()
                     TokenVector.Add(newNode);
                 }
                 else
                 {
                     _nodeId++;
-                    Node newNode = new(_nodeId, _token, _tokenType, line); //_token.Trim()
+                    Token newNode = new(_nodeId, _token, _tokenType, line, column); //_token.Trim()
                     TokenVector.Add(newNode);
                 }
             }

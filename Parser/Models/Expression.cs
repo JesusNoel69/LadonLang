@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LadonLang.Data;
 
 namespace LadonLang.Parser.Models
 {
-    public class Expression
-    {
+    
         public abstract class Expr { }
 
         public class BinaryExpr : Expr
@@ -38,7 +38,7 @@ namespace LadonLang.Parser.Models
         public class LiteralExpr : Expr
         {
             public object? Value { get; }
-            public LiteralExpr(object? value) => Value = value;
+            public LiteralExpr(Token? value) => Value = value;
         }
 
         public class VariableExpr : Expr
@@ -58,5 +58,5 @@ namespace LadonLang.Parser.Models
                 Value = value;
             }
         }
-    }
+    
 }

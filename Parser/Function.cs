@@ -2,73 +2,97 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LadonLang.Data;
+using LadonLang.Parser.Models;
 
 namespace LadonLang.Parser
 {
     public partial class Parser
     {
-        //Function ::= (fn)? Identifier "(" ParameterList ")" ReturnTypesList? "=<" BlockOfFn "/>"
-        public static bool Function()
+        //Function ::= fn Identifier "(" ParameterList ")" ReturnTypesList? "=<" BlockOfFn "/>"
+        public static FunctionStmt? Function()
         {
-            Match("FN_KEYWORD");
+            if (!Match("FN_KEYWORD"))
+            {
+                return null;
+            }
             if (!Match("IDENTIFIER"))
             {
-                return false;
+                return null;
             }
+            var functionName = _tokenVector[_index-1];
             if (!Match("OPARENTHESIS"))
             {
-                return false;
+                return null;
             }
-            ParameterList();
+            var parameters = ParameterList();
+            
+
             if (!Match("CPARENTHESIS"))
             {
-                return false;
+                return null;
             }
-            System.Console.WriteLine("a"+token);
-            ReturnTypesList();
+            var returnTpes = ReturnTypesList();
             if (!MatchDouble("EQUAL","LTHAN"))
             {
-
-                return false;
+                return null;
             }
-            BlockOfFn();
+            var block = BlockOfFn();
 
             if(!MatchDouble("SLASH", "MTHAN"))
             {
-            System.Console.WriteLine("llega");
-
-                return false;
+                return null;
             }
-            return true;
+            var outParameter = parameters?.FirstOrDefault(x=> x.IsOutParameter==true);
+            var parameterWithoutOut = parameters?.Where(x=> x.IsOutParameter==false).ToList();
+            return new FunctionStmt
+            {
+                Block=block,
+                Name=functionName,
+                OutParameter=outParameter,
+                Parameters=parameterWithoutOut,
+                ReturnTypes=returnTpes
+            };
         }
         
         // ParameterList ::= Parameter ("," Parameter)* | epsilon
-        public static bool ParameterList()
+        public static List<Parameter>? ParameterList()
         {
-            if (PeekType(0) == "CPARENTHESIS") return true;
-
-            if (!Parameter()) return false;
+            var parameters = new List<Parameter>();
+            if (PeekType(0) == "CPARENTHESIS") return [];//maybe this should be null
+            var firstParameter = Parameter();
+            if (firstParameter==null) return null;
+            parameters.Add(firstParameter);
             while (Match("COMMA"))
             {
-                if (!Parameter()) return false;
+                var nextParameter = Parameter();
+                if (nextParameter==null) return null;
+                parameters.Add(nextParameter);
             }
-            return true;
+            return parameters;
         }
         // Parameter ::= ("out")? Identifier ExplicitType?
-        static bool Parameter()
+        static Parameter? Parameter()
         {
-            Match("OUT_KEYWORD"); // opcional
-            if (!Match("IDENTIFIER")) return false;
-
-            // tipo explícito opcional
+            bool isOut = Match("OUT_KEYWORD");
+            if (!Match("IDENTIFIER")) return null;
+            var parameterName = _tokenVector[_index-1];
+            Token? type = null;
+            // optional explicit type
             if (PeekType(0) == "LTHAN")
             {
-                if (!ExplicitType()) return false;
+                type = ExplicitType();
+                if (type==null) return null;
             }
-            return true;
+            return new()
+            {
+                IsOutParameter=isOut,
+                Type=type,
+                Name=parameterName
+            };
         }
         //ReturnTypesList ::= "->" Type ","? Return_types_list|epsilon
-        public static bool ReturnTypesList()
+        public static List<Token>? ReturnTypesList()
         {
             int start = _index;
             string startToken = token;
@@ -76,60 +100,71 @@ namespace LadonLang.Parser
             if (!MatchDouble("MINUS", "MTHAN"))
             {
                 _index = start; token = startToken;
-                return true;
+                return new List<Token>();
             }
-
-            if (!TypeValue()) return false;
+            var types = new List<Token>();
+            var firstType = TypeValue();
+            if (firstType==null) return null;
+            types.Add(firstType);
             while (Match("COMMA"))
             {
-                if (!TypeValue()) return false;
+                var nextType = TypeValue();
+                if (nextType==null) return null;
+                types.Add(nextType);
             }
-            return true;
+            return types;
         }
-        public static bool BlockOfFn()
+        public static BlockStmt? BlockOfFn()
         {
+            var block = new BlockStmt();
             while (_index < _tokenVector.Count)
             {
                 if (PeekType(0) == "SLASH" && PeekType(1) == "MTHAN")
-                    return true;
-
-                if (!Statement())
-                    return false;
+                    return block;
+                var stmt = Statement();
+                if (stmt == null)
+                    return null;
+                block.Statements.Add(stmt);
             }
-            return false;
+            return null;
         }
 
         //ExplicitType ::= "<" Type ">"
-        public static bool ExplicitType()
+        public static Token? ExplicitType()
         {
             if (!Match("LTHAN"))
             {
-                return false;
+                return null;
             }
-            if(!TypeValue()){
+            var type = TypeValue();
+            if(type==null){
 
-                return false;
+                return null;
             }
             if (!Match("MTHAN"))
             {
-                return false;
+                return null;
             }
-            return true;
+            return type;
         }
         //TypeValue ::= int|float|number|string|bool|char|text
-        public static bool TypeValue()
+        public static Token? TypeValue()
         {
             //Identifier too because it can be a class
-            return Match("INT_KEYWORD", "BOOL_KEYWORD"
-                , "FLOAT_KEYWORD", "CHAR_KEYWORD", "STRING_KEYWORD", "TEXT_KEYWORD", "IDENTIFIER");
+            if(Match("INT_KEYWORD", "BOOL_KEYWORD"
+                , "FLOAT_KEYWORD", "CHAR_KEYWORD", "STRING_KEYWORD", "TEXT_KEYWORD", "IDENTIFIER"))
+            {
+                return _tokenVector[_index-1];
+            }
+            return null;
         }
-
-
+        //lambda logic commented at this version
+        /*
         static bool MatchFatArrow()
         {
             return MatchDouble("EQUAL", "MTHAN");
         }
-
+        
         static bool CanStartLambdaBody(string t)
         {
             // starts with < then < ... />
@@ -268,5 +303,6 @@ namespace LadonLang.Parser
             Console.WriteLine("Error: EOF antes de cerrar '/>' en lambda.");
             return false;
         }
+        */
     }
 }

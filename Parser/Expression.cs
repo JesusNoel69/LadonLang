@@ -2,15 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LadonLang.Data;
 using LadonLang.Lexer;
+using LadonLang.Parser.Models;
 
 namespace LadonLang.Parser
 {
     public partial class Parser
     {
-        
+        //check if is not necesary afterward
         // AssignStmt ::= IDENTIFIER TypeArguments? ("=" Expr)? 
-        public static bool AssignStmt()
+        /*public static bool AssignStmt()
         {
             if (!Match("IDENTIFIER")){
                 return false;
@@ -26,137 +28,177 @@ namespace LadonLang.Parser
                 }
             }
             return true;
-        }
+        }*/
         //Expression ::= AssignmentExpr
-        public static bool Expr()
+        public static Expr? Expr()
         {
             return AssignmentExpr();
         }
         //AssignmentExpr   ::= LogicalOrExpr ( "=" AssignmentExpr )?
-        public static bool AssignmentExpr()
+        public static Expr? AssignmentExpr()
         {
-            if(!LogicalOrExpr()) return false;
-            if(MatchSingleAssign())
+            int start = _index;
+            string st = token;
+            if (PeekType(0) == "IDENTIFIER" && PeekType(1) == "EQUAL")
             {
-                if(!AssignmentExpr()) return false;
+                // left
+                if (!Match("IDENTIFIER")) { _index = start; token = st; return null; }
+                Token name = _tokenVector[_index - 1];
+
+                if (!MatchSingleAssign()) { _index = start; token = st; return null; }
+
+                var value = AssignmentExpr(); // right-associative: a=b=c
+                if (value == null) { _index = start; token = st; return null; }
+
+                return new AssignExpr(name, value);
             }
-            return true;
+            return LogicalOrExpr();
         }
         //LogicalOrExpr ::= LogicalAndExpr ( "|" LogicalAndExpr )*
-        public static bool LogicalOrExpr()
+        public static Expr? LogicalOrExpr()
         {
-            if(!LogicalAndExpr()) return false;
+
+            var left = LogicalAndExpr();
+            if (left == null) return null;
             while(Match("OR"))
             {
-                if(!LogicalAndExpr()) return false;
+                Token op = _tokenVector[_index - 1];
+                var right = LogicalAndExpr();
+                if (right == null) return null;
+                left = new BinaryExpr(left, op, right);
             }
-            return true;
+            return left;
         }
         //LogicalAndExpr ::= EqualityExpr ( "&" EqualityExpr )*
-        public static bool LogicalAndExpr()
+        public static Expr? LogicalAndExpr()
         {
-            if(!EqualityExpr()) return false;
+           var left = EqualityExpr();
+            if (left == null) return null;
             while(Match("AND"))
             {
-                if(!EqualityExpr()) return false;
+                Token op = _tokenVector[_index - 1];
+                var right = EqualityExpr();
+                if (right == null) return null;
+                left = new BinaryExpr(left, op, right);
             }
-            return true;
+            return left;
         }
         //EqualityExpr     ::= ComparisonExpr ( ( "==" | "!=" ) ComparisonExpr )* ;
-        public static bool EqualityExpr()
+        public static Expr? EqualityExpr()
         {
-            if (!ComparisonExpr()) return false;
+            var left = ComparisonExpr();
+            if (left == null) return null;
 
             while (true)
             {
-                // ==
-                if (MatchDouble("EQUAL", "EQUAL"))
+                int start = _index;
+                string st = token;
+                // ==              !=
+                if (MatchDouble("EQUAL", "EQUAL") || MatchDouble("DIFFERENT", "EQUAL"))
                 {
-                    if (!ComparisonExpr()) return false;
-                }
-                // !=
-                else if (MatchDouble("DIFFERENT", "EQUAL"))
-                {
-                    if (!ComparisonExpr()) return false;
+                    //At this moment only save first operator to diferenciate
+                    Token op1 = _tokenVector[_index - 2];
+                    Token op2 = _tokenVector[_index - 1];
+                    Token op3 = DoubleToken(op1, op2);
+                    var right = ComparisonExpr();
+                    if(right==null)return null;
+                    left = new BinaryExpr(left, op3, right);
                 }
                 else
                 {
+                    _index = start; token = st;
                     break;
                 }
             }
 
-            return true;
+            return left;
         }
         //ComparisonExpr   ::= AdditiveExpr ( ( "<" | "<=" | ">" | ">=" ) AdditiveExpr )* ;
-        public static bool ComparisonExpr()
+        public static Expr? ComparisonExpr()
         {
-            if (!AdditiveExpr()) return false;
+            var left = AdditiveExpr();
+            if (left == null) return null;
 
             while (true)
             {
+                int start = _index;
+                string st = token;
                 // <=  (< + =)
-                if (MatchDouble("LTHAN", "EQUAL"))
-                {
-                    if (!AdditiveExpr()) return false;
-                }
                 // >=  (> + =)
-                else if (MatchDouble("MTHAN", "EQUAL"))
+                if(MatchDouble("LTHAN", "EQUAL") || MatchDouble("MTHAN", "EQUAL"))
                 {
-                    if (!AdditiveExpr()) return false;
+                    Token op1 = _tokenVector[_index - 2];
+                    Token op2 = _tokenVector[_index - 1];
+                    Token op3 = DoubleToken(op1,op2);
+                    var right = AdditiveExpr();
+                    if (right == null) return null;
+                    left = new BinaryExpr(left, op3, right);
                 }
-                // <
-                else if ( Match("LTHAN"))
+                // <     >
+                else if ( Match("LTHAN") || Match("MTHAN"))
                 {
-                    if (!AdditiveExpr()) return false;
-                }
-                // > 
-                else if ( Match("MTHAN"))
-                {
-                    if (!AdditiveExpr()) return false;
+                    Token op = _tokenVector[_index - 1];
+
+                    var right = AdditiveExpr();
+                    if (right == null) return null;
+                    left = new BinaryExpr(left, op, right);
                 }
                 else
                 {
+                    _index = start; token = st;
                     break;
                 }
             }
 
-            return true;
+            return left;
         }
         //AdditiveExpr     ::= MultiplicativeExpr ( ("+" | "-") MultiplicativeExpr )* ;
-        public static bool AdditiveExpr()
+        public static Expr? AdditiveExpr()
         {
-            if(!MultiplicativeExpr()) return false;
+            var left = MultiplicativeExpr();
+            if(left==null) return null;
+
             while(Match("PLUS", "MINUS"))
             {
-                if(!MultiplicativeExpr()) return false;
+                Token op = _tokenVector[_index-1];
+                var right = MultiplicativeExpr();
+                if(right==null) return null;
+                left = new BinaryExpr(left, op, right);
             }
-            return true;
+            return left;
         }
         //MultiplicativeExpr ::= UnaryExpr ( ("*" | "/" | "%") UnaryExpr )* ;
-        public static bool MultiplicativeExpr()
+        public static Expr? MultiplicativeExpr()
         {
-            if(!UnaryExpr()) return false;
-            System.Console.WriteLine("viene de la multipicative");
+            var left = UnaryExpr();
+            if(left==null) return null;
+
             while(Match("ASTERISK","SLASH", "PERCENT"))
             {
-                if(!UnaryExpr()) return false;
+                Token op = _tokenVector[_index-1];
+                var right = UnaryExpr(); 
+                if(right == null) return null;
+                left = new BinaryExpr(left, op,right);
             }
-            return true;
+            return left;
         }
         /*
         UnaryExpr        ::= ( "-" | "!" | "not" ) UnaryExpr
                    | PostfixExpr ;
         */
-        public static bool UnaryExpr()
+        public static Expr? UnaryExpr()
         {
             if(Match("MINUS", "DIFFERENT"))
             {
-                return UnaryExpr();
+                Token op = _tokenVector[_index-1];
+                var right = UnaryExpr();
+                if (right == null) return null;
+                return new UnaryExpr(op, right);
             }
             return PostfixExpr();
         }
         //PostfixExpr ::= PrimaryExpr PostfixPart* ;
-        public static bool PostfixExpr()
+        public static Expr? PostfixExpr()
         {
             return PrimaryExpr();
         }
@@ -167,29 +209,32 @@ namespace LadonLang.Parser
               | LambdaExpr
               | "(" Expression ")" ;
         */
-        public static bool PrimaryExpr(){
+        public static Expr? PrimaryExpr(){
             //check this: NUMBER_KEYWORD", "TRUE_KEYWORD", "FALSE_KEYWORD", "INTEGER_NUMBER
             if (Match("TRUE_KEYWORD", "FALSE_KEYWORD", "INTEGER_NUMBER", "FLOAT_NUMBER", "CHARACTER", "STRING"))
             {
-                System.Console.WriteLine("matcheo tru");
-                return true;
+                var tok = _tokenVector[_index - 1];
+                return new LiteralExpr(tok);
             }
             if (Match("IDENTIFIER"))
             {
-                return true;
+                var tok = _tokenVector[_index - 1];
+                return new VariableExpr(tok);
             }
 
             if (Match("OPARENTHESIS"))
             {
-                if (!Expr()) return false;
-                if (!Expect("CPARENTHESIS")) return false;
-                return true;
+                var inner = Expr();
+                if (inner == null) return null;
+                if (!Expect("CPARENTHESIS")) return null;
+                return inner;
             }
+
             if (!_silent)
             {
                 Console.WriteLine($"Error: token inesperado |{token}| en Primary {_tokenVector[_index].TokenType}");
             }
-            return false;
+            return null;
         }
     }
 }

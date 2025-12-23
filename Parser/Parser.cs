@@ -1,4 +1,5 @@
 using LadonLang.Data;
+using LadonLang.Parser.Models;
 namespace LadonLang.Parser
 {
     public partial class Parser
@@ -10,7 +11,7 @@ namespace LadonLang.Parser
         'L', 'M','N','O','p','P', 'q', 'Q','R', 'S' ,'T','U', 'v', 'V', 'w', 'X','Y', 'z', 'Z','_'];
         private static int _col=0;
         public static int _index = 0;
-        private static List<Node> _tokenVector=[];      
+        private static List<Token> _tokenVector=[];      
         public static string token = "";
         public static string nextToken = "";
         static bool _silent = false;
@@ -49,6 +50,11 @@ namespace LadonLang.Parser
             }
             return false;
         }
+        public static Token DoubleToken(Token t1, Token t2)
+        {
+            Token t3 = new Token(0,t1.Lexeme+t2.Lexeme, t1.TokenType+"_"+t2.TokenType,t2.Lines, t1.Columns);
+            return t3;
+        }
         public static bool Expect(string type)
         {
             //System.Console.WriteLine("x"+type);
@@ -86,14 +92,15 @@ namespace LadonLang.Parser
             }
             return false;
         }
-        public static bool Parse(List<Node> tokens)
+        public static bool Parse(List<Token> tokens)
         {
             _tokenVector = tokens;
             _index = 0;
             token = _tokenVector.Count > 0 ? _tokenVector[0].TokenType : "";
             while (_index < _tokenVector.Count)
             {
-                if (!Statement())
+                var stmt = Statement();
+                if (stmt == null)
                 {
                     Console.WriteLine("Error to sentence parse.");
                     return false;
@@ -103,12 +110,11 @@ namespace LadonLang.Parser
             return true;
         }
 
-        public static bool Statement()
+        public static StmtNode? Statement()
         {
-
             if (_index >= _tokenVector.Count)
             {
-                return false;
+                return null;
             }
             token = _tokenVector[_index].TokenType;
             string t0 = PeekType(0);
@@ -144,42 +150,66 @@ namespace LadonLang.Parser
                 return If();                
             }
             //FUNCTION
-            if(t0 == "FN_KEYWORD" || t0 == "IDENTIFIER" && t1 == "OPARENTHESIS")
+            if(t0 == "FN_KEYWORD")
             {
                 System.Console.WriteLine("ientifica que es una funcion");
                 return Function();
             }
+            //SENTENCE NAMMED
+            if (t0 == "ARROBA"){
+                return NammedSentenceCall();
+            }
+            //FUNCTION CALL
+            if (PeekType(0) == "IDENTIFIER" && PeekType(1) == "OPARENTHESIS")
+            {
+                return FunctionCallStmt();
+            }
             //LAMBDA
-            if (PeekType(0) == "IDENTIFIER" && (PeekType(1) == "LTHAN" || PeekType(1) == "EQUAL"))
+            /*if (PeekType(0) == "IDENTIFIER" && (PeekType(1) == "LTHAN" || PeekType(1) == "EQUAL"))
             {
                 int s = _index; var st = token;
                 if (LambdaAssign()) return true;
                 _index = s; token = st;
-            }
+            }*/
 
-            if (token == "VAR_KEYWORD" || token == "IDENTIFIER")
+            /*if (token == "VAR_KEYWORD" )
             {
-                //System.Console.WriteLine("si entro en var");
-                if (!VarDeclStmt())
+                var varDecl = VarDeclStmt();
+                if (varDecl==null)
                 {
                     Console.WriteLine("Error: declaración de variable inválida.");
-                    return false;
+                    return null;
                 }
-                return true;
+                return ;
             }
+            if(token == "IDENTIFIER" && PeekType(1) == "EQUAL")
+            {
+                System.Console.WriteLine("asignar");
+                return Assign();
+            }*/
+            // VAR DECL
+            if (t0 == "VAR_KEYWORD")
+                return VarDeclStmt(); // VarDeclStmt(): VarDeclStmt?
+
+            // ASSIGN
+            if (t0 == "IDENTIFIER" && t1 == "EQUAL")
+                return Assign(); // Assign(): AssignStmt?
 
             System.Console.WriteLine("No coincide"+token);
-            return false;
+            return null;
         }
         // ReturnStmt ::= "<" return "/>"
-        public static bool ReturnStmt()
+        public static ReturnStmt? ReturnStmt()
         {
-            if (!Match("LTHAN")) return false;
-            if (!Match("RETURN_KEYWORD")) return false;
-            if (!Match("SLASH")) return false;
-            if (!Match("MTHAN")) return false;
-            return true;
+            if (!Match("LTHAN")) return null;
+            if (!Match("RETURN_KEYWORD")) return null;
+            var returnKeyWord = _tokenVector[_index-1];
+            if (!Match("SLASH")) return null;
+            if (!Match("MTHAN")) return null;
+            return new()
+            {
+                ReturnKeyWord=returnKeyWord
+            };
         }
-
     }
 }

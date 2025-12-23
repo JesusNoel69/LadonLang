@@ -22,8 +22,9 @@ currentDirectory=currentDirectory.Replace("\\", "/");
 currentDirectory+="/Test";
 StreamReader archive = new(@$"{currentDirectory}/{archiveName}");
 Console.WriteLine("el directtorio es: "+currentDirectory);
+int numCol=1; 
 while((line = archive.ReadLine())!= null ){
-    next=Lexer.Scan(line,numLine++);
+    next=Lexer.Scan(line,numLine++, numCol++);
 }
 
 Console.WriteLine(Lexer.TokenVector.Count());

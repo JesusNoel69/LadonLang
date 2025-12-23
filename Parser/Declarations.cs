@@ -1,104 +1,159 @@
+using System.Linq.Expressions;
+using System.Security;
+using LadonLang.Data;
+using LadonLang.Parser.Models;
+
 namespace LadonLang.Parser
 {
     public partial class Parser 
     {
         //VarDeclStmt ::= VarDecl ";"
-        public static bool VarDeclStmt()
+        public static VarDeclStmt? VarDeclStmt()
         {
-            if(!VarDecl())return false;
+            var declaration = VarDecl();
+            if(declaration==null)return null;
             if (!Expect("SEMICOLON")) 
             {
                 Console.WriteLine("Error: falta ';'.");
-                return false;
+                return null;
             }
-            return true;;
+            return new()
+            {
+                Decl= declaration
+            };
         }
         //VarDecl ::= VAR_KEYWORD? VarDeclarator ("," VarDeclarator)*
-        public static bool VarDecl()
+        public static VarDecl? VarDecl()
         {
-            Match("VAR_KEYWORD");
-            if(!VarDeclarator()) return false;
+            //in this version var will be required
+            //Match("VAR_KEYWORD");
+            if (!Match("VAR_KEYWORD"))
+            {
+                return null;
+            }
+            var varTok = _tokenVector[_index-1];
+            var declaration = new VarDecl{VarKeyword=varTok};
+            var firstDeclaration = VarDeclarator();
+            if(firstDeclaration==null) return null;
+            declaration.Declarators.Add(firstDeclaration);
             while (Match("COMMA"))
             {
-                if(!VarDeclarator()) return false;
+                var nextDeclaration = VarDeclarator();
+                if(nextDeclaration==null) return null;
+                declaration.Declarators.Add(nextDeclaration);
             }
-            return true;
+            return declaration;
         }
       
         //VarDeclarator ::= Identifier TypeArguments? VarInitializer?
-        public static bool VarDeclarator()
+        public static VarDeclarator? VarDeclarator()
         {
             if(!Match("IDENTIFIER"))
             {
-                return false;
+                return null;
             }
-            TypeArguments();
-            VarInitializer();
-            return true;
+            var identifierToken = _tokenVector[_index-1];
+
+            var typeArgs = TypeArguments();
+            var Initializer = VarInitializer();
+            return new VarDeclarator
+            {
+                Identifier=identifierToken,
+                Initializer = Initializer,
+                TypeArguments = typeArgs
+            };
         }
         //TypeArguments ::= "<" TypeList ">" ;
-        public static bool TypeArguments()
+        public static List<DataTypeNode> TypeArguments()
         {
-            // if it has no rments returns true because it's optional 
-            if(!Match("LTHAN")) return true;
-            if(!TypeList()) return false;
-            if(!Match("MTHAN")) return false;
-            return true;
+            // if it has no arguments returns true because it's optional 
+            if(!Match("LTHAN")) return new List<DataTypeNode>();
+            var list = TypeList();
+            //these values has errors if no manage 
+            if (list == null)
+            throw new Exception("TypeArguments: se esperaba TypeList después de '<'.");
+
+            if (!Match("MTHAN"))
+                throw new Exception("TypeArguments: falta '>'.");
+            return list;
         }
         //TypeList ::= DataType ("," DataType)* ;
-        public static bool TypeList()
+        public static List<DataTypeNode>? TypeList()
         {
-            if (!DataType())
+            var list = new List<DataTypeNode>();
+            var firstType = DataType();
+            if (firstType==null)
             {
-                return false;
+                return null;
             }
+            list.Add(firstType);
             while (Match("COMMA"))
-            {
-                if (!DataType())
-                {
-                    return false;
-                }
+            {  
+                var nextType = DataType();
+                if (nextType == null) return null;
+                list.Add(nextType);
             }
-            return true;
+            return list;
         }
         //VarInitializer ::= "=" ExpressionList ;
-        public static bool VarInitializer()
+        public static VarInitializerNode? VarInitializer()
         {
-            if(!MatchSingleAssign()){
-                return true;
+            if(!MatchSingleAssign()){ // if is'nt initilized yet
+                return null;
             }
-            if (!ExpressionList())
+            //keep the assign op, maybe isn't necesary
+            var op = _tokenVector[_index-1];
+            var expressions = ExpressionList();
+            if (expressions==null)
             {
-                System.Console.WriteLine("problema: "+token);
-
-                return false;
+                return null;
             }
-            return true;
+            var init = new VarInitializerNode()
+            {
+                AssignOperator=op
+            };
+            init.Expressions.AddRange(expressions);
+            return init;
         }
         //ExpressionList ::= Expression ("," Expression)* ;
-        public static bool ExpressionList()
+        public static List<Expr>? ExpressionList()
         {
-            if (!Expr()) return false;
+            var list = new List<Expr>();
+            var expression = Expr();
+            if (expression==null) return null;
+            list.Add(expression);
             while (Match("COMMA"))
             {
-                if (!Expr()) return false;
+                var nextExpression = Expr();
+                if (nextExpression==null) return null;
+                list.Add(nextExpression);
             }
-            return true;
+            return list;
         }
-        //DataType ::= (INT_KEYWORD|FLOAT_KEYWORD|CHAR_KEYWORD|STRING_KEYWORD|TEXT_KEYWORD) (Val (DOT Val)?)*
-        public static bool DataType()
+        //DataType ::= (INT_KEYWORD|FLOAT_KEYWORD|CHAR_KEYWORD|STRING_KEYWORD|TEXT_KEYWORD) (Val (DOT Val)?)?
+        public static DataTypeNode? DataType()
         {
             if (!Match("INT_KEYWORD","FLOAT_KEYWORD","CHAR_KEYWORD","STRING_KEYWORD","TEXT_KEYWORD"))
-                return false;
+                return null;
+            var baseType = _tokenVector[_index-1];
+            Token? arg = null;
+            Token? argAfterDot = null;
 
             if (Match("INTEGER_NUMBER", "FLOAT_NUMBER"))
             {
+                arg = _tokenVector[_index-1];
                 if (Match("DOT"))
                 {
-                    if (!Match("INTEGER_NUMBER", "FLOAT_NUMBER")) return false;
+                    if (!Match("INTEGER_NUMBER", "FLOAT_NUMBER")) return null;
+                    argAfterDot = _tokenVector[_index-1];
                 }
             }
-            return true;
+            return new DataTypeNode
+            {
+                BaseTypeKeyword=baseType,
+                SizeOrArg1=arg,
+                SizeOrArg2=argAfterDot
+            };
         }
 
         //Val ::= "TRUE_KEYWORD" | "FALSE_KEYWORD" | "INTEGER_NUMBER" | "FLOAT_NUMBER" | "CHARACTER" | "STRING"

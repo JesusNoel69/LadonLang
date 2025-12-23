@@ -1,7 +1,8 @@
 var numero;
 var nombre1, nombre2;
-nombre<string> = "hola";
-variable_compuesta<int,float> = 2, 2.5;
+var nombre<string> = "hola";
+var variable_compuesta<int,float> = 2, 2.5;
+variable =2+2;
 <input/>
 <input type=[key]/>
 <input type=[key] key='A'/>
@@ -81,7 +82,7 @@ FN nombre(parameter1, parameter2)=<
     
 />
 
-nombre(parameter1, parameter2)=<
+FN nombre(parameter1, parameter2)=<
     <return/>
 />
 
@@ -95,16 +96,10 @@ FN nombre(parameter1, out parameter2)=<
 FN nombre()->int,float=<
 />
 
-nombre(par1, par2)=<  />
+FN nombre(par1, par2)=<  />
 
-
-nombre = () => "algun texto"
-
-nombre = () => <
-     <return/>
-/>
-
-es_mayor=e=>e>=18
-
-sumar=(e,d)=>e+d
-mul<int>=(e<int>, x<int>)=>x*e
+hola();
+sumar(1,2);
+f(x, 2+3, (a+b));
+@nombre();
+@nombre(x=y);
