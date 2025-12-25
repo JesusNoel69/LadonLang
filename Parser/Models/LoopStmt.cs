@@ -1,16 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using LadonLang.Data;
-
 namespace LadonLang.Parser.Models
 {
     public class LoopStmt : StmtNode
     {
-        public string Name {get; set;} = string.Empty;
+        public Token? Name {get; set;}
         public LoopHeader LoopHeader{get; set;}
-        public BlockStmt Block { get; set;}
+        public BlockStmt? Block { get; set;}
     }
     public class LoopHeader : AstNode
     {}

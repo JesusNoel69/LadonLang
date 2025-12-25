@@ -16,33 +16,16 @@ namespace LadonLang.Parser
             {
                 return null;
             }
-            if (!Match("IDENTIFIER"))
-            {
-                return null;
-            }
+            //required
+            Expect("IDENTIFIER");
             var functionName = _tokenVector[_index-1];
-            if (!Match("OPARENTHESIS"))
-            {
-                return null;
-            }
+            Expect("OPARENTHESIS");
             var parameters = ParameterList();
-            
-
-            if (!Match("CPARENTHESIS"))
-            {
-                return null;
-            }
+            Expect("CPARENTHESIS");
             var returnTpes = ReturnTypesList();
-            if (!MatchDouble("EQUAL","LTHAN"))
-            {
-                return null;
-            }
+            ExpectDouble("EQUAL","LTHAN", "=<");
             var block = BlockOfFn();
-
-            if(!MatchDouble("SLASH", "MTHAN"))
-            {
-                return null;
-            }
+            ExpectDouble("SLASH", "MTHAN", "/>");
             var outParameter = parameters?.FirstOrDefault(x=> x.IsOutParameter==true);
             var parameterWithoutOut = parameters?.Where(x=> x.IsOutParameter==false).ToList();
             return new FunctionStmt
@@ -50,8 +33,8 @@ namespace LadonLang.Parser
                 Block=block,
                 Name=functionName,
                 OutParameter=outParameter,
-                Parameters=parameterWithoutOut,
-                ReturnTypes=returnTpes
+                Parameters=parameterWithoutOut??[],
+                ReturnTypes=returnTpes??[]
             };
         }
         
@@ -59,7 +42,7 @@ namespace LadonLang.Parser
         public static List<Parameter>? ParameterList()
         {
             var parameters = new List<Parameter>();
-            if (PeekType(0) == "CPARENTHESIS") return [];//maybe this should be null
+            if (PeekType(0) == "CPARENTHESIS") return parameters;//maybe this should be null
             var firstParameter = Parameter();
             if (firstParameter==null) return null;
             parameters.Add(firstParameter);
@@ -75,14 +58,17 @@ namespace LadonLang.Parser
         static Parameter? Parameter()
         {
             bool isOut = Match("OUT_KEYWORD");
-            if (!Match("IDENTIFIER")) return null;
+            if (!Match("IDENTIFIER"))
+            {
+                throw new UnexpectedTokenException("IDENTIFIER (parameter)", CurrentToken());
+            }
             var parameterName = _tokenVector[_index-1];
             Token? type = null;
             // optional explicit type
             if (PeekType(0) == "LTHAN")
             {
-                type = ExplicitType();
-                if (type==null) return null;
+                type = ExplicitType(); //should be throw if it fail
+                //if (type==null) return null;
             }
             return new()
             {
@@ -104,17 +90,23 @@ namespace LadonLang.Parser
             }
             var types = new List<Token>();
             var firstType = TypeValue();
-            if (firstType==null) return null;
+            if (firstType == null)
+            {
+                throw new InvalidTypeException(CurrentToken());
+            }
             types.Add(firstType);
             while (Match("COMMA"))
             {
                 var nextType = TypeValue();
-                if (nextType==null) return null;
+                if (nextType==null)
+                {
+                    throw new InvalidTypeException(CurrentToken());
+                }
                 types.Add(nextType);
             }
             return types;
         }
-        public static BlockStmt? BlockOfFn()
+        public static BlockStmt BlockOfFn()
         {
             var block = new BlockStmt();
             while (_index < _tokenVector.Count)
@@ -123,28 +115,21 @@ namespace LadonLang.Parser
                     return block;
                 var stmt = Statement();
                 if (stmt == null)
-                    return null;
+                    throw new ParserExeption("Error into function block.", CurrentToken());
                 block.Statements.Add(stmt);
             }
-            return null;
+            throw new ParserExeption("EOF before to close '/>'.", CurrentToken());
         }
 
         //ExplicitType ::= "<" Type ">"
         public static Token? ExplicitType()
         {
-            if (!Match("LTHAN"))
-            {
-                return null;
-            }
+            Expect("LTHAN");
             var type = TypeValue();
             if(type==null){
-
-                return null;
+                throw new InvalidTypeException(CurrentToken());
             }
-            if (!Match("MTHAN"))
-            {
-                return null;
-            }
+            Expect("MTHAN");
             return type;
         }
         //TypeValue ::= int|float|number|string|bool|char|text

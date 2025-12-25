@@ -1,34 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using LadonLang.Data;
-using LadonLang.Lexer;
 using LadonLang.Parser.Models;
-
 namespace LadonLang.Parser
 {
     public partial class Parser
     {
-        //check if is not necesary afterward
-        // AssignStmt ::= IDENTIFIER TypeArguments? ("=" Expr)? 
-        /*public static bool AssignStmt()
-        {
-            if (!Match("IDENTIFIER")){
-                return false;
-            }
-            TypeArguments();
-
-            if (MatchSingleAssign())
-            {
-                if (!Expr())
-                {
-                    Console.WriteLine("Error: expresión inválida en asignación.");
-                    return false;
-                }
-            }
-            return true;
-        }*/
         //Expression ::= AssignmentExpr
         public static Expr? Expr()
         {
@@ -42,13 +17,30 @@ namespace LadonLang.Parser
             if (PeekType(0) == "IDENTIFIER" && PeekType(1) == "EQUAL")
             {
                 // left
-                if (!Match("IDENTIFIER")) { _index = start; token = st; return null; }
+                if (!Match("IDENTIFIER")) { 
+                    _index = start; 
+                    token = st; 
+                    var found = (_index < _tokenVector.Count) ? _tokenVector[_index] : _tokenVector[^1];
+                    throw new UnexpectedTokenException("IDENTIFIER", found);
+                }
                 Token name = _tokenVector[_index - 1];
 
-                if (!MatchSingleAssign()) { _index = start; token = st; return null; }
+                if (!MatchSingleAssign())
+                { 
+                    _index = start; 
+                    token = st; 
+                    return LogicalOrExpr(); 
+                }
 
                 var value = AssignmentExpr(); // right-associative: a=b=c
-                if (value == null) { _index = start; token = st; return null; }
+                if (value == null) { 
+                    _index = start; 
+                    token = st; 
+                    Token found = (_index < _tokenVector.Count)
+                        ? _tokenVector[_index]
+                        : new Token(0, "", "EOF", name.Lines, name.Columns);
+                    throw new UnexpectedTokenException("expression after '='", found); 
+                }
 
                 return new AssignExpr(name, value);
             }
@@ -57,14 +49,16 @@ namespace LadonLang.Parser
         //LogicalOrExpr ::= LogicalAndExpr ( "|" LogicalAndExpr )*
         public static Expr? LogicalOrExpr()
         {
-
             var left = LogicalAndExpr();
             if (left == null) return null;
             while(Match("OR"))
             {
                 Token op = _tokenVector[_index - 1];
                 var right = LogicalAndExpr();
-                if (right == null) return null;
+                if (right == null)
+                {
+                    throw new UnexpectedTokenException("expression after '|'", CurrentToken());
+                }
                 left = new BinaryExpr(left, op, right);
             }
             return left;
@@ -78,7 +72,10 @@ namespace LadonLang.Parser
             {
                 Token op = _tokenVector[_index - 1];
                 var right = EqualityExpr();
-                if (right == null) return null;
+                if (right == null)
+                {
+                    throw new UnexpectedTokenException("expression after '&'", CurrentToken());
+                }
                 left = new BinaryExpr(left, op, right);
             }
             return left;
@@ -101,7 +98,15 @@ namespace LadonLang.Parser
                     Token op2 = _tokenVector[_index - 1];
                     Token op3 = DoubleToken(op1, op2);
                     var right = ComparisonExpr();
-                    if(right==null)return null;
+                    if (right == null)
+                    {
+                        //maybe _silent is not need
+                        if (!_silent)
+                        {
+                            throw new UnexpectedTokenException("Expression after equality operator (== o !=)", CurrentToken());
+                        }
+                        return null;
+                    }
                     left = new BinaryExpr(left, op3, right);
                 }
                 else
@@ -131,7 +136,14 @@ namespace LadonLang.Parser
                     Token op2 = _tokenVector[_index - 1];
                     Token op3 = DoubleToken(op1,op2);
                     var right = AdditiveExpr();
-                    if (right == null) return null;
+                    if (right == null)
+                    {
+                        if (!_silent)
+                        {
+                            throw new UnexpectedTokenException("expression after comparative operator (<= or >=)", CurrentToken());
+                        }
+                        return null;
+                    }
                     left = new BinaryExpr(left, op3, right);
                 }
                 // <     >
@@ -140,16 +152,23 @@ namespace LadonLang.Parser
                     Token op = _tokenVector[_index - 1];
 
                     var right = AdditiveExpr();
-                    if (right == null) return null;
+                    if (right == null)
+                    {
+                        if (!_silent)
+                        {
+                            throw new UnexpectedTokenException("expression after comparative operator (< or >)", CurrentToken());
+                        }
+                        return null;
+                    }
                     left = new BinaryExpr(left, op, right);
                 }
                 else
                 {
-                    _index = start; token = st;
+                    _index = start; 
+                    token = st;
                     break;
                 }
             }
-
             return left;
         }
         //AdditiveExpr     ::= MultiplicativeExpr ( ("+" | "-") MultiplicativeExpr )* ;
@@ -162,7 +181,14 @@ namespace LadonLang.Parser
             {
                 Token op = _tokenVector[_index-1];
                 var right = MultiplicativeExpr();
-                if(right==null) return null;
+                if (right == null)
+                {
+                    if (!_silent)
+                    {
+                         throw new UnexpectedTokenException("expression after aditive operator (+ or -)", CurrentToken());
+                    }
+                    return null;
+                }
                 left = new BinaryExpr(left, op, right);
             }
             return left;
@@ -177,7 +203,14 @@ namespace LadonLang.Parser
             {
                 Token op = _tokenVector[_index-1];
                 var right = UnaryExpr(); 
-                if(right == null) return null;
+                if (right == null)
+                {
+                    if (!_silent)
+                    {
+                        throw new UnexpectedTokenException("expression after multiplicatve operator (*, / or %)", CurrentToken());
+                    }
+                    return null;
+                }
                 left = new BinaryExpr(left, op,right);
             }
             return left;
@@ -192,7 +225,14 @@ namespace LadonLang.Parser
             {
                 Token op = _tokenVector[_index-1];
                 var right = UnaryExpr();
-                if (right == null) return null;
+                if (right == null)
+                {
+                    if (!_silent)
+                    {
+                        throw new UnexpectedTokenException("expression after unary operator (- or !)", CurrentToken());
+                    }
+                    return null;
+                }
                 return new UnaryExpr(op, right);
             }
             return PostfixExpr();
@@ -225,14 +265,24 @@ namespace LadonLang.Parser
             if (Match("OPARENTHESIS"))
             {
                 var inner = Expr();
-                if (inner == null) return null;
-                if (!Expect("CPARENTHESIS")) return null;
+                if (inner == null)
+                {
+                    if (!_silent)
+                        throw new UnexpectedTokenException("expresión into parenthesis", CurrentToken());
+                    return null;
+                }
+                if (!Match("CPARENTHESIS"))
+                {
+                    if (!_silent)
+                        throw new UnexpectedTokenException("CPARENTHESIS", CurrentToken());
+                    return null;
+                }
                 return inner;
             }
 
             if (!_silent)
             {
-                Console.WriteLine($"Error: token inesperado |{token}| en Primary {_tokenVector[_index].TokenType}");
+                throw new UnexpectedTokenException("primary expresion (literal, identifier or '(' )", _tokenVector[_index]);
             }
             return null;
         }

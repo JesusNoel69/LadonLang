@@ -26,14 +26,14 @@ int numCol=1;
 while((line = archive.ReadLine())!= null ){
     next=Lexer.Scan(line,numLine++, numCol++);
 }
-
+/*
 Console.WriteLine(Lexer.TokenVector.Count());
 
 foreach (var item in Lexer.TokenVector.Where(x=>x.TokenType!="SPACE"))//Lexer.TokenVector)
 {
     Console.WriteLine("¡"+item.TokenType.ToString()+"¡");
-}
+}*/
 
-var vector = Lexer.TokenVector;
-
-Console.WriteLine( Parser.Parse([.. vector.Where(x=>x.TokenType!="SPACE")]));
+var vector = Lexer.TokenVector.Where(x=>x.TokenType!="SPACE").ToList();
+var parserProgram = Parser.Parse(vector);
+//Console.WriteLine( parserProgram!=null);

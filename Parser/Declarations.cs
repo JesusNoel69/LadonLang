@@ -1,8 +1,5 @@
-using System.Linq.Expressions;
-using System.Security;
 using LadonLang.Data;
 using LadonLang.Parser.Models;
-
 namespace LadonLang.Parser
 {
     public partial class Parser 
@@ -12,11 +9,7 @@ namespace LadonLang.Parser
         {
             var declaration = VarDecl();
             if(declaration==null)return null;
-            if (!Expect("SEMICOLON")) 
-            {
-                Console.WriteLine("Error: falta ';'.");
-                return null;
-            }
+            Expect("SEMICOLON");
             return new()
             {
                 Decl= declaration
@@ -33,27 +26,32 @@ namespace LadonLang.Parser
             }
             var varTok = _tokenVector[_index-1];
             var declaration = new VarDecl{VarKeyword=varTok};
+            //maybe manage null in var4decl isn't necesary, because throw excption yet
             var firstDeclaration = VarDeclarator();
-            if(firstDeclaration==null) return null;
+            if (firstDeclaration == null)
+            {
+                throw new UnexpectedTokenException("IDENTIFIER (declarator after 'var')", CurrentToken());
+            }
             declaration.Declarators.Add(firstDeclaration);
             while (Match("COMMA"))
             {
                 var nextDeclaration = VarDeclarator();
-                if(nextDeclaration==null) return null;
+                if (nextDeclaration == null)
+                {
+                    throw new UnexpectedTokenException("IDENTIFIER (declarator expected after ',')", CurrentToken());
+                }
                 declaration.Declarators.Add(nextDeclaration);
             }
             return declaration;
         }
-      
         //VarDeclarator ::= Identifier TypeArguments? VarInitializer?
         public static VarDeclarator? VarDeclarator()
         {
             if(!Match("IDENTIFIER"))
             {
-                return null;
+                throw new UnexpectedTokenException("IDENTIFIER", CurrentToken());
             }
             var identifierToken = _tokenVector[_index-1];
-
             var typeArgs = TypeArguments();
             var Initializer = VarInitializer();
             return new VarDeclarator
@@ -71,10 +69,8 @@ namespace LadonLang.Parser
             var list = TypeList();
             //these values has errors if no manage 
             if (list == null)
-            throw new Exception("TypeArguments: se esperaba TypeList después de '<'.");
-
-            if (!Match("MTHAN"))
-                throw new Exception("TypeArguments: falta '>'.");
+                throw new InvalidTypeException(CurrentToken());
+            Expect("MTHAN");
             return list;
         }
         //TypeList ::= DataType ("," DataType)* ;
@@ -84,13 +80,16 @@ namespace LadonLang.Parser
             var firstType = DataType();
             if (firstType==null)
             {
-                return null;
+                throw new InvalidTypeException(CurrentToken());
             }
             list.Add(firstType);
             while (Match("COMMA"))
             {  
                 var nextType = DataType();
-                if (nextType == null) return null;
+                if (nextType == null)
+                {
+                    throw new InvalidTypeException(CurrentToken());
+                }
                 list.Add(nextType);
             }
             return list;
@@ -106,7 +105,7 @@ namespace LadonLang.Parser
             var expressions = ExpressionList();
             if (expressions==null)
             {
-                return null;
+                throw new UnexpectedTokenException("Expression (expression list after '=')", CurrentToken());
             }
             var init = new VarInitializerNode()
             {
@@ -120,12 +119,18 @@ namespace LadonLang.Parser
         {
             var list = new List<Expr>();
             var expression = Expr();
-            if (expression==null) return null;
+            if (expression == null)
+            {
+                throw new UnexpectedTokenException("Expression", CurrentToken());
+            }
             list.Add(expression);
             while (Match("COMMA"))
             {
                 var nextExpression = Expr();
-                if (nextExpression==null) return null;
+                if (nextExpression == null)
+                {
+                    throw new UnexpectedTokenException("Expression (after ',')", CurrentToken());
+                }
                 list.Add(nextExpression);
             }
             return list;
@@ -144,7 +149,10 @@ namespace LadonLang.Parser
                 arg = _tokenVector[_index-1];
                 if (Match("DOT"))
                 {
-                    if (!Match("INTEGER_NUMBER", "FLOAT_NUMBER")) return null;
+                    if (!Match("INTEGER_NUMBER", "FLOAT_NUMBER"))
+                    {
+                        throw new UnexpectedTokenException("INTEGER_NUMBER or FLOAT_NUMBER", CurrentToken());
+                    }
                     argAfterDot = _tokenVector[_index-1];
                 }
             }
@@ -155,12 +163,10 @@ namespace LadonLang.Parser
                 SizeOrArg2=argAfterDot
             };
         }
-
         //Val ::= "TRUE_KEYWORD" | "FALSE_KEYWORD" | "INTEGER_NUMBER" | "FLOAT_NUMBER" | "CHARACTER" | "STRING"
         public static bool Val()
         {
             return Match("TRUE_KEYWORD", "FALSE_KEYWORD", "INTEGER_NUMBER", "FLOAT_NUMBER", "CHARACTER", "STRING");
         }
-
     }
 }

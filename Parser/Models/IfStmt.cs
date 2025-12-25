@@ -1,5 +1,4 @@
 using LadonLang.Data;
-
 namespace LadonLang.Parser.Models
 {
     public class BlockStmt : StmtNode

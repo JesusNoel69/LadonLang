@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using LadonLang.Data;
-using LadonLang.Parser.Models;
-
 namespace LadonLang.Parser.Models
 {
     public abstract class AssignTarget : AstNode { }
@@ -23,6 +17,6 @@ namespace LadonLang.Parser.Models
     {
         //get
         public Token? GetVariable { get; set; }
-        public List<Expr> PrintList{get;}=[];
+        public List<Expr> PrintList{get;set;}=[];
     }
 }

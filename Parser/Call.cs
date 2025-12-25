@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using LadonLang.Data;
 using LadonLang.Parser.Models;
-
 namespace LadonLang.Parser
 {
     public partial class Parser
@@ -15,27 +10,52 @@ namespace LadonLang.Parser
         {
             int start = _index;
             string startToken = token;
+            bool prevSilent = _silent;
 
-            if (!Match("IDENTIFIER")) { _index = start; token = startToken; return null; }
+            //might have errors
+            _silent=true;
+            if (!Match("IDENTIFIER")) 
+            { 
+                /*_index = start; 
+                token = startToken;
+                */
+                _silent = prevSilent;
+                return null; 
+            }
             var nameCall = _tokenVector[_index-1];
-            if (!Match("OPARENTHESIS")) { _index = start; token = startToken; return null; }
+            if (!Match("OPARENTHESIS")) 
+            { 
+                _index = start; 
+                token = startToken;
+                _silent=prevSilent;
+                return null;
+            }
             var arguments = new List<Expr>();
             // ArgList?  (empty if ')')
             if (PeekType(0) != "CPARENTHESIS")
             {
                 var firstArgument = Expr();
-                if (firstArgument==null) { _index = start; token = startToken; return null; }
+                if (firstArgument==null) 
+                {
+                    _index = start; 
+                    token = startToken; 
+                    throw new ParserExeption("An expression expected as call argument", CurrentToken());
+                }
                 arguments.Add(firstArgument);
                 while (Match("COMMA"))
                 {
                     var nextArgument = Expr();
-                    if (nextArgument==null) { _index = start; token = startToken; return null; }
+                    if (nextArgument==null) 
+                    { 
+                        _index = start; 
+                        token = startToken; 
+                        throw new ParserExeption("Expression expected after ','.", CurrentToken()); 
+                    }
                     arguments.Add(nextArgument);
                 }
             }
-
-            if (!Expect("CPARENTHESIS")) { _index = start; token = startToken; return null; }
-            if (!Expect("SEMICOLON")) { _index = start; token = startToken; return null; }
+            Expect("CPARENTHESIS");
+            Expect("SEMICOLON");
             return new()
             {
                 Arguments=arguments,
@@ -51,26 +71,52 @@ namespace LadonLang.Parser
             string startToken = token;
             Token? internalVariable = null;
             Token? assignation = null;
+            bool prevSilent = _silent;
+            _silent=true;
 
-
-            if (!Match("ARROBA")) { _index = start; token = startToken; return null; }
-            if (!Match("IDENTIFIER")) { _index = start; token = startToken; return null; }
+            if (!Match("ARROBA"))
+            { 
+                _index = start; 
+                token = startToken;
+                _silent = prevSilent;
+                return null; 
+            }
+            if (!Match("IDENTIFIER")) 
+            {
+                _index = start; 
+                token = startToken; 
+                _silent = prevSilent;
+                throw new UnexpectedTokenException("IDENTIFIER after '@'", CurrentToken());
+            }
             var nammedSentence = _tokenVector[_index-1];
-            if (!Expect("OPARENTHESIS")) { _index = start; token = startToken; return null; }
-
-            // (IDENTIFIER "=" IDENTIFIER)? opcional
+            if (!Match("OPARENTHESIS"))
+            {
+                _index = start;
+                token = startToken;
+                _silent = prevSilent;
+                throw new UnexpectedTokenException("OPARENTHESIS '(' after @Identifier", CurrentToken());
+            }
+            // (IDENTIFIER "=" IDENTIFIER)? optional
             if (PeekType(0) != "CPARENTHESIS")
             {
-                if (!Match("IDENTIFIER")) { _index = start; token = startToken; return null; }
+                if (!Match("IDENTIFIER"))
+                {
+                    _index = start;
+                    token = startToken;
+                    throw new UnexpectedTokenException("IDENTIFIER (internal variable) or ')'", CurrentToken()); 
+                }
                 internalVariable=_tokenVector[_index-1];
-                if (!Expect("EQUAL")) { _index = start; token = startToken; return null; }
-                if (!Expect("IDENTIFIER")) { _index = start; token = startToken; return null; }
+                Expect("EQUAL");
+                if (!Match("IDENTIFIER")) 
+                { 
+                    _index = start; 
+                    token = startToken; 
+                    throw new UnexpectedTokenException("IDENTIFIER (value assignation)", CurrentToken());
+                }
                 assignation=_tokenVector[_index-1];
             }
-
-            if (!Expect("CPARENTHESIS")) { _index = start; token = startToken; return null; }
-            if (!Expect("SEMICOLON")) { _index = start; token = startToken; return null; }
-
+            Expect("CPARENTHESIS");
+            Expect("SEMICOLON");
             return new()
             {
                 Assignation=assignation,

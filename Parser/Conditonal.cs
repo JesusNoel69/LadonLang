@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security;
-using System.Threading.Tasks;
 using LadonLang.Data;
 using LadonLang.Parser.Models;
-
 namespace LadonLang.Parser
 {
     public partial class Parser
@@ -19,25 +13,25 @@ namespace LadonLang.Parser
             if (!Match("TRUE_KEYWORD", "FALSE_KEYWORD", "INTEGER_NUMBER"
                 , "FLOAT_NUMBER", "CHARACTER", "STRING", "IDENTIFIER"))
             {
-                return null;
+                throw new UnexpectedTokenException(
+                    "Value or identifier after '<select'",
+                    CurrentToken()
+                );
             }
             var sentinelValue = _tokenVector[_index-1];
             var sentenceName = NammedSentence();
 
-            if (!Match("MTHAN"))
-            {
-                return null;
-            }
+            if (!Expect("MTHAN"))
+                throw new UnexpectedTokenException("MTHAN", CurrentToken());
             var options = OptionList();
             if (options==null)
             {
-                return null;
+                throw new ParserExeption("Select: Invalid option list", CurrentToken());
             }
-
-            if (!Match("LTHAN")) return null;
-            if (!Match("SLASH")) return null;
-            if (!Match("SELECT_KEYWORD")) return null;
-            if (!Match("MTHAN")) return null;
+            if (!Match("LTHAN")) throw new UnexpectedTokenException("LTHAN ('</select>')", CurrentToken());
+            if (!Match("SLASH")) throw new UnexpectedTokenException("SLASH ('</select>')", CurrentToken());
+            if (!Match("SELECT_KEYWORD")) throw new UnexpectedTokenException("SELECT_KEYWORD", CurrentToken());
+            if (!Expect("MTHAN")) throw new UnexpectedTokenException("MTHAN", CurrentToken());
             return new SelectStmt()
             {
                 Name=sentenceName,
@@ -46,13 +40,12 @@ namespace LadonLang.Parser
             };
         }
         // Option ::= "<" option ( "default" | ("value" "=" (Identifier|Value)) ) ">" Block "</" option ">"
-        public static OptionStmt Option()
+        public static OptionStmt? Option()
         {
-            bool isDefault = false;
-            Token? tokenValue = null;
             if (!Match("LTHAN")) return null;
             if (!Match("OPTION_KEYWORD")) return null;
-
+            bool isDefault = false;
+            Token? tokenValue = null;
             if (Match("DEFAULT_KEYWORD"))
             {
                 // ok: <option default>
@@ -61,24 +54,37 @@ namespace LadonLang.Parser
             else
             {
                 // <option value=valor1>
-                if (!Match("VALUE_KEYWORD")) return null;
-                if (!Match("EQUAL")) return null;
+                if (!Match("VALUE_KEYWORD"))
+                {
+                    throw new UnexpectedTokenException("DEFAULT_KEYWORD or VALUE_KEYWORD", CurrentToken());
+                }
+                if (!Match("EQUAL"))
+                {
+                    throw new UnexpectedTokenException("EQUAL", CurrentToken());
+                }
 
                 if (!Match("TRUE_KEYWORD", "FALSE_KEYWORD", "INTEGER_NUMBER",
                         "FLOAT_NUMBER", "CHARACTER", "STRING", "IDENTIFIER"))
-                    return null;
+                {
+                    throw new UnexpectedTokenException(
+                        "Value or identifie after 'value='",
+                        CurrentToken()
+                    );
+                }
                 tokenValue=_tokenVector[_index-1];
             }
-
-            if (!Match("MTHAN")) return null;
+            Expect("MTHAN");
             var blockOfCode = BlockOfCodeOption(); 
-            if (blockOfCode==null) return null;
-
+            if (blockOfCode == null)
+            {
+                throw new ParserExeption("Option: Invalid block", CurrentToken());
+            }
             // </option>
-            if (!Match("LTHAN")) return null;
-            if (!Match("SLASH")) return null;
-            if (!Match("OPTION_KEYWORD")) return null;
-            if (!Match("MTHAN")) return null;
+            if (!Match("LTHAN")) throw new UnexpectedTokenException("LTHAN ('</option>')", CurrentToken());
+            if (!Match("SLASH")) throw new UnexpectedTokenException("SLASH ('</option>')", CurrentToken());
+            if (!Match("OPTION_KEYWORD")) throw new UnexpectedTokenException("OPTION_KEYWORD", CurrentToken());
+            if (!Expect("MTHAN")) throw new UnexpectedTokenException("MTHAN", CurrentToken());
+
 
             return new OptionStmt()
             {
@@ -96,7 +102,10 @@ namespace LadonLang.Parser
             while (PeekType(0) == "LTHAN" && PeekType(1) == "OPTION_KEYWORD")
             {
                 var option = Option(); 
-                if (option==null) return null;
+                if (option == null)
+                {
+                    throw new ParserExeption("OptionList: Invalid option", CurrentToken());
+                }
                 options.Add(option);
             }
             return options;
@@ -113,13 +122,11 @@ namespace LadonLang.Parser
                 var stmt = Statement();
                 if (stmt==null)
                 {
-                    Console.WriteLine("Error dentro de <option>...</option>.");
-                    return null;
+                    throw new ParserExeption("Error before to close <option>...</option> block", CurrentToken());
                 }
                 statements.Add(stmt);
             }
-            Console.WriteLine("Error: EOF antes de cerrar </option>.");
-            return null;
+            throw new ParserExeption("EOF before to close </option> block", CurrentToken());
         }
         // If ::= "<" if Expr ";" NammedSentence? ">" Block "</" if ">" (ElseIf | Else)*
         public static IfStmt? If()
@@ -127,26 +134,32 @@ namespace LadonLang.Parser
             if (!Match("LTHAN")) return null;
             if (!Match("IF_KEYWORD")) return null;
             var condition = Expr();
-            if (condition == null) return null;
-
-            if (!Expect("SEMICOLON")) return null;
-
+            if (condition == null)
+            {
+                throw new ParserExeption("If: Invalid condition", CurrentToken());
+            }
+            Expect("SEMICOLON");
             var sentenceName = NammedSentence();
-
-            if (!Expect("MTHAN")) return null;
+            Expect("MTHAN");
             var blockOfCode = BlockOfCodeIf();
-            if (blockOfCode == null) return null;
+            if (blockOfCode == null)
+            {
+                throw new ParserExeption("If: Invalid condition", CurrentToken());
+            }
 
             // </if>
-            if (!Match("LTHAN")) return null;
-            if (!Match("SLASH")) return null;
-            if (!Match("IF_KEYWORD")) return null;
-            if (!Expect("MTHAN")) return null;
+            if (!Match("LTHAN")) throw new UnexpectedTokenException("LTHAN ('</if>')", CurrentToken());
+            if (!Match("SLASH")) throw new UnexpectedTokenException("SLASH ('</if>')", CurrentToken());
+            if (!Match("IF_KEYWORD")) throw new UnexpectedTokenException("IF_KEYWORD", CurrentToken());        
+            Expect("MTHAN");
             List<ElifStmt> elifStatements =[];
             while (PeekType(0) == "LTHAN" && PeekType(1) == "ELIF_KEYWORD")
             {
                 var elif=ElseIf(); 
-                if (elif==null) return null;
+                if (elif == null)
+                {
+                    throw new ParserExeption("If: Invalid elif block", CurrentToken());
+                }
                 elifStatements.Add(elif);
             }
 
@@ -154,10 +167,11 @@ namespace LadonLang.Parser
             if (PeekType(0) == "LTHAN" && PeekType(1) == "ELSE_KEYWORD")
             {
                 elseStmt = Else();
-                if (elseStmt == null) return null;
+                if (elseStmt == null)
+                {
+                    throw new ParserExeption("If: Invalid else block.", CurrentToken());
+                }
             }
-
-
             return new IfStmt()
             {
                 Condition=condition,
@@ -172,17 +186,17 @@ namespace LadonLang.Parser
         {
             if (!Match("LTHAN")) return null;
             if (!Match("ELSE_KEYWORD")) return null;
-
-            if (!Expect("MTHAN")) return null;
+            Expect("MTHAN");
             var blockOfCode = BlockOfCodeElse();
-            if (blockOfCode==null) return null;
-
+            if (blockOfCode == null)
+            {
+                throw new ParserExeption("Else: Invalid block", CurrentToken());
+            }
             // </else>
-            if (!Match("LTHAN")) return null;
-            if (!Match("SLASH")) return null;
-            if (!Match("ELSE_KEYWORD")) return null;
-            if (!Expect("MTHAN")) return null;
-
+            if (!Match("LTHAN")) throw new UnexpectedTokenException("LTHAN ('</else>')", CurrentToken());
+            if (!Match("SLASH")) throw new UnexpectedTokenException("SLASH ('</else>')", CurrentToken());
+            if (!Match("ELSE_KEYWORD")) throw new UnexpectedTokenException("ELSE_KEYWORD", CurrentToken());
+            Expect("MTHAN");
             return new ElseStmt(){
                 Block=blockOfCode
             };
@@ -194,18 +208,22 @@ namespace LadonLang.Parser
             if (!Match("LTHAN")) return null;
             if (!Match("ELIF_KEYWORD")) return null;
             var condition = Expr();
-            if (condition==null) return null;
-            if (!Expect("SEMICOLON")) return null;
-
-            if (!Expect("MTHAN")) return null;
+            if (condition == null)
+            {
+                throw new ParserExeption("Elif: Invalid condition", CurrentToken());
+            }
+            Expect("SEMICOLON");
+            Expect("MTHAN");
             var block = BlockOfCodeElif();
-            if (block==null) return null;
-
+            if (block == null)
+            {
+                throw new ParserExeption("Elif: Invalid block", CurrentToken());
+            }
             // </elif>
-            if (!Match("LTHAN")) return null;
-            if (!Match("SLASH")) return null;
-            if (!Match("ELIF_KEYWORD")) return null;
-            if (!Expect("MTHAN")) return null;
+            if (!Match("LTHAN")) throw new UnexpectedTokenException("LTHAN ('</elif>')", CurrentToken());
+            if (!Match("SLASH")) throw new UnexpectedTokenException("SLASH ('</elif>')", CurrentToken());
+            if (!Match("ELIF_KEYWORD")) throw new UnexpectedTokenException("ELIF_KEYWORD", CurrentToken());
+            Expect("MTHAN");
 
             return new ElifStmt()
             {
@@ -224,13 +242,11 @@ namespace LadonLang.Parser
                 var statement = Statement();
                 if (statement==null)
                 {
-                    Console.WriteLine("Error dentro de <if>...</if>.");
-                    return null;
+                    throw new ParserExeption("Error into <if>...</if> block", CurrentToken());
                 }
                 block.Statements.Add(statement);
             }
-            Console.WriteLine("Error: EOF antes de cerrar </if>.");
-            return null;
+            throw new ParserExeption("EOF before to close </if>.", CurrentToken());
         }
         public static BlockStmt? BlockOfCodeElse()
         {
@@ -243,13 +259,11 @@ namespace LadonLang.Parser
                 var statement = Statement();
                 if (statement==null)
                 {
-                    Console.WriteLine("Error dentro de <else>...</else>.");
-                    return null;
+                    throw new ParserExeption("Error into <else>...</else> block", CurrentToken());
                 }
                 block.Statements.Add(statement);
             }
-            Console.WriteLine("Error: EOF antes de cerrar </else>.");
-            return null;
+            throw new ParserExeption("EOF before to close </else>.", CurrentToken());
         }
         public static BlockStmt? BlockOfCodeElif()
         {
@@ -262,230 +276,11 @@ namespace LadonLang.Parser
                 var statement = Statement();
                 if (statement==null)
                 {
-                    Console.WriteLine("Error dentro de <elif>...</elif>.");
-                    return null;
+                    throw new ParserExeption("Error into <elif>...</elif> block", CurrentToken());
                 }
                 block.Statements.Add(statement);
             }
-            Console.WriteLine("Error: EOF antes de cerrar </elif>.");
-            return null;
+            throw new ParserExeption("EOF before to close </elif>.", CurrentToken());
         }
-        
-        /*
-         //Select ::= "<" select (Identifier|Value) NammedSentence? ">" OptionList "</" select ">"
-        public static bool Select()
-        {
-            if (!Match("LTHAN")) return false;
-            if (!Match("SELECT_KEYWORD")) return false;
-            //at this time it no expression use
-            if (!Match("TRUE_KEYWORD", "FALSE_KEYWORD", "INTEGER_NUMBER"
-                , "FLOAT_NUMBER", "CHARACTER", "STRING", "IDENTIFIER"))
-            {
-                return false;
-            }
-            NammedSentence();
-
-            if (!Match("MTHAN"))
-            {
-                return false;
-            }
-
-            if (!OptionList())
-            {
-                return false;
-            }
-
-            if (!Match("LTHAN")) return false;
-            if (!Match("SLASH")) return false;
-            if (!Match("SELECT_KEYWORD")) return false;
-            if (!Match("MTHAN")) return false;
-            return true;
-        }
-        // Option ::= "<" option ( "default" | ("value" "=" (Identifier|Value)) ) ">" Block "</" option ">"
-        public static bool Option()
-        {
-            if (!Match("LTHAN")) return false;
-            if (!Match("OPTION_KEYWORD")) return false;
-
-            if (Match("DEFAULT_KEYWORD"))
-            {
-                // ok: <option default>
-            }
-            else
-            {
-                // <option value=valor1>
-                if (!Match("VALUE_KEYWORD")) return false;
-                if (!Match("EQUAL")) return false;
-
-                if (!Match("TRUE_KEYWORD", "FALSE_KEYWORD", "INTEGER_NUMBER",
-                        "FLOAT_NUMBER", "CHARACTER", "STRING", "IDENTIFIER"))
-                    return false;
-            }
-
-            if (!Match("MTHAN")) return false;
-
-            if (!BlockOfCodeOption()) return false;
-
-            // </option>
-            if (!Match("LTHAN")) return false;
-            if (!Match("SLASH")) return false;
-            if (!Match("OPTION_KEYWORD")) return false;
-            if (!Match("MTHAN")) return false;
-
-            return true;
-        }
-        // OptionList ::= Option*
-        public static bool OptionList()
-        {
-            while (PeekType(0) == "LTHAN" && PeekType(1) == "OPTION_KEYWORD")
-            {
-                if (!Option()) return false;
-            }
-            return true;
-        }
-        //need finish
-        public static bool BlockOfCodeOption()
-        {
-            while (_index < _tokenVector.Count)
-            {
-                // stop at </option>
-                if (PeekType(0) == "LTHAN" && PeekType(1) == "SLASH" && PeekType(2) == "OPTION_KEYWORD")
-                    return true;
-
-                if (!Statement())
-                {
-                    Console.WriteLine("Error dentro de <option>...</option>.");
-                    return false;
-                }
-            }
-            Console.WriteLine("Error: EOF antes de cerrar </option>.");
-            return false;
-        }
-        // If ::= "<" if Expr ";" NammedSentence? ">" Block "</" if ">" (ElseIf | Else)*
-        public static bool If()
-        {
-            if (!Match("LTHAN")) return false;
-            if (!Match("IF_KEYWORD")) return false;
-
-            if (!Expr()) return false;
-
-            if (!Expect("SEMICOLON")) return false;
-
-            NammedSentence();
-
-            if (!Expect("MTHAN")) return false;
-
-            if (!BlockOfCodeIf()) return false;
-
-            // </if>
-            if (!Match("LTHAN")) return false;
-            if (!Match("SLASH")) return false;
-            if (!Match("IF_KEYWORD")) return false;
-            if (!Expect("MTHAN")) return false;
-
-            while (PeekType(0) == "LTHAN" && PeekType(1) == "ELIF_KEYWORD")
-            {
-                if (!ElseIf()) return false;
-            }
-
-            if (PeekType(0) == "LTHAN" && PeekType(1) == "ELSE_KEYWORD")
-            {
-                if (!Else()) return false;
-            }
-
-            return true;
-        }
-        // Else ::= "<" else ">" Block "</" else ">"
-        public static bool Else()
-        {
-            if (!Match("LTHAN")) return false;
-            if (!Match("ELSE_KEYWORD")) return false;
-
-            if (!Expect("MTHAN")) return false;
-
-            if (!BlockOfCodeElse()) return false;
-
-            // </else>
-            if (!Match("LTHAN")) return false;
-            if (!Match("SLASH")) return false;
-            if (!Match("ELSE_KEYWORD")) return false;
-            if (!Expect("MTHAN")) return false;
-
-            return true;
-        }
-
-       // ElseIf ::= "<" elif Expr ";" ">" Block "</" elif ">"
-        public static bool ElseIf()
-        {
-            if (!Match("LTHAN")) return false;
-            if (!Match("ELIF_KEYWORD")) return false;
-
-            if (!Expr()) return false;
-            if (!Expect("SEMICOLON")) return false;
-
-            if (!Expect("MTHAN")) return false;
-
-            if (!BlockOfCodeElif()) return false;
-
-            // </elif>
-            if (!Match("LTHAN")) return false;
-            if (!Match("SLASH")) return false;
-            if (!Match("ELIF_KEYWORD")) return false;
-            if (!Expect("MTHAN")) return false;
-
-            return true;
-        }
-        public static bool BlockOfCodeIf()
-        {
-            while (_index < _tokenVector.Count)
-            {
-                // stop at </if>
-                if (PeekType(0) == "LTHAN" && PeekType(1) == "SLASH" && PeekType(2) == "IF_KEYWORD")
-                    return true;
-
-                if (!Statement())
-                {
-                    Console.WriteLine("Error dentro de <if>...</if>.");
-                    return false;
-                }
-            }
-            Console.WriteLine("Error: EOF antes de cerrar </if>.");
-            return false;
-        }
-        public static bool BlockOfCodeElse()
-        {
-            while (_index < _tokenVector.Count)
-            {
-                // stop at </else>
-                if (PeekType(0) == "LTHAN" && PeekType(1) == "SLASH" && PeekType(2) == "ELSE_KEYWORD")
-                    return true;
-
-                if (!Statement())
-                {
-                    Console.WriteLine("Error dentro de <else>...</else>.");
-                    return false;
-                }
-            }
-            Console.WriteLine("Error: EOF antes de cerrar </else>.");
-            return false;
-        }
-        public static bool BlockOfCodeElif()
-        {
-            while (_index < _tokenVector.Count)
-            {
-                // stop at </elif>
-                if (PeekType(0) == "LTHAN" && PeekType(1) == "SLASH" && PeekType(2) == "ELIF_KEYWORD")
-                    return true;
-
-                if (!Statement())
-                {
-                    Console.WriteLine("Error dentro de <elif>...</elif>.");
-                    return false;
-                }
-            }
-            Console.WriteLine("Error: EOF antes de cerrar </elif>.");
-            return false;
-        }*/
-
     }
 }

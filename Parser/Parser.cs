@@ -4,16 +4,9 @@ namespace LadonLang.Parser
 {
     public partial class Parser
     {
-        private static char[] _delimiters=[' ','-', ';',',','[', ']','(',')','#','=','+','%','&','/','|','*','!','@',':','<','>','\n']; 
-        private static readonly char[] _numbers=['0','1','2','3','4','5','6','7','8','9'];
-        private static char[] _letters = ['A',
-        'b', 'B', 'c', 'C', 'D','E', 'F', 'G', 'h', 'H', 'I', 'j', 'J', 'k', 'K',
-        'L', 'M','N','O','p','P', 'q', 'Q','R', 'S' ,'T','U', 'v', 'V', 'w', 'X','Y', 'z', 'Z','_'];
-        private static int _col=0;
         public static int _index = 0;
         private static List<Token> _tokenVector=[];      
-        public static string token = "";
-        public static string nextToken = "";
+        static string token = "";
         static bool _silent = false;
         public static void Advance()
         {
@@ -28,6 +21,15 @@ namespace LadonLang.Parser
             }
         }
         // Helpers
+        static Token CurrentToken()
+        {
+            if (_tokenVector == null || _tokenVector.Count == 0)
+                return new Token(0, "", "EOF", 0, 0);
+
+            return (_index >= 0 && _index < _tokenVector.Count)
+                ? _tokenVector[_index]
+                : _tokenVector[_tokenVector.Count - 1];
+        }
         public static bool Match(string type)
         {
             if (token == type)
@@ -37,7 +39,6 @@ namespace LadonLang.Parser
             }
             return false;
         }
-
         public static bool Match(params string[] types)
         {
             foreach (var t in types)
@@ -57,10 +58,11 @@ namespace LadonLang.Parser
         }
         public static bool Expect(string type)
         {
-            //System.Console.WriteLine("x"+type);
-            if (Match(type)) return true;
-            Console.WriteLine($"Error: se esperaba {type}, se encontró {token}");
-            return false;
+            if (Match(type))
+            {
+                return true;
+            }
+            throw new UnexpectedTokenException(type, CurrentToken());
         }
         //how if eof is neccesary, actually token vector have no eof token
         static string PeekType(int offset)
@@ -70,7 +72,6 @@ namespace LadonLang.Parser
                 return _tokenVector[idx].TokenType;
             return "EOF";
         }
-
         // two characters != == <= 
         static bool MatchDouble(string first, string second)
         {
@@ -82,6 +83,11 @@ namespace LadonLang.Parser
             }
             return false;
         }
+        static void ExpectDouble(string first, string second, string expectedLabel)
+        {
+            if (!MatchDouble(first, second))
+                throw new UnexpectedTokenException(expectedLabel, CurrentToken());
+        }
         static bool MatchSingleAssign()
         {
             // '=' different to '=='
@@ -92,24 +98,23 @@ namespace LadonLang.Parser
             }
             return false;
         }
-        public static bool Parse(List<Token> tokens)
+        public static BlockStmt Parse(List<Token> tokens)
         {
             _tokenVector = tokens;
             _index = 0;
             token = _tokenVector.Count > 0 ? _tokenVector[0].TokenType : "";
+            var program = new BlockStmt();
             while (_index < _tokenVector.Count)
             {
                 var stmt = Statement();
                 if (stmt == null)
                 {
-                    Console.WriteLine("Error to sentence parse.");
-                    return false;
+                    throw new ParserExeption("Statement unexpected null return", CurrentToken());
                 }
+                program.Statements.Add(stmt);
             }
-
-            return true;
+            return program;
         }
-
         public static StmtNode? Statement()
         {
             if (_index >= _tokenVector.Count)
@@ -119,50 +124,57 @@ namespace LadonLang.Parser
             token = _tokenVector[_index].TokenType;
             string t0 = PeekType(0);
             string t1 = PeekType(1);
+            //embebed method to return statement
+            static StmtNode Require(string name, Func<StmtNode?> parser)
+            {
+                int start = _index;
+                string startToken = token;
+                var node = parser();
+                if (node != null) return node;
+                _index = start;
+                token = startToken;
+                throw new ParserExeption($"invalid sentence: {name}.", CurrentToken());
+            }
+
             //RETURN
             if (PeekType(0) == "LTHAN" && PeekType(1) == "RETURN_KEYWORD")
-                return ReturnStmt();
+                return Require("<return/>", ReturnStmt);
             // INPUT
-            System.Console.WriteLine("t0: "+t0+" t1: "+t1);
             if (t0 == "LTHAN" && t1 == "INPUT_KEYWORD")
-                return Input();
+                return Require("<input/>", Input);
 
             // OUTPUT
             if (t0 == "LTHAN" && t1 == "OUTPUT_KEYWORD")
-                return Output();
+                return Require("<output>", Output);
             
             // LOOP
             if (t0 == "LTHAN" && t1 == "LOOP_KEYWORD")
             {
-                System.Console.WriteLine("ientifica que es un loop");
-                return Loop();                
+                return Require("<loop>", Loop);              
             }
             // SELECT
             if (t0 == "LTHAN" && t1 == "SELECT_KEYWORD")
             {
-                System.Console.WriteLine("ientifica que es un select");
-                return Select();                
+                return Require("<select>", Select);               
             }
             // IF
             if (t0 == "LTHAN" && t1 == "IF_KEYWORD")
             {
-                System.Console.WriteLine("ientifica que es un if");
-                return If();                
+                return Require("<if>", If);                
             }
             //FUNCTION
             if(t0 == "FN_KEYWORD")
             {
-                System.Console.WriteLine("ientifica que es una funcion");
-                return Function();
+                return Require("fn", Function);
             }
             //SENTENCE NAMMED
             if (t0 == "ARROBA"){
-                return NammedSentenceCall();
+                return Require("@call", NammedSentenceCall);
             }
             //FUNCTION CALL
             if (PeekType(0) == "IDENTIFIER" && PeekType(1) == "OPARENTHESIS")
             {
-                return FunctionCallStmt();
+                return Require("FunctionCall", FunctionCallStmt);
             }
             //LAMBDA
             /*if (PeekType(0) == "IDENTIFIER" && (PeekType(1) == "LTHAN" || PeekType(1) == "EQUAL"))
@@ -189,23 +201,38 @@ namespace LadonLang.Parser
             }*/
             // VAR DECL
             if (t0 == "VAR_KEYWORD")
-                return VarDeclStmt(); // VarDeclStmt(): VarDeclStmt?
+                return Require("VarDecl", VarDeclStmt); // VarDeclStmt(): VarDeclStmt?
 
             // ASSIGN
             if (t0 == "IDENTIFIER" && t1 == "EQUAL")
-                return Assign(); // Assign(): AssignStmt?
+                return Require("Assign", Assign); // Assign(): AssignStmt?
 
-            System.Console.WriteLine("No coincide"+token);
-            return null;
+            throw new UnexpectedTokenException(
+                "sentence start (return/input/output/loop/select/if/fn/@call/call/var/assign)",
+                CurrentToken()
+            );
         }
         // ReturnStmt ::= "<" return "/>"
         public static ReturnStmt? ReturnStmt()
         {
+            int start = _index;
+            string startToken = token;
             if (!Match("LTHAN")) return null;
-            if (!Match("RETURN_KEYWORD")) return null;
+            if (!Match("RETURN_KEYWORD"))
+            {
+                _index = start;
+                token = startToken;
+                return null;
+            }
             var returnKeyWord = _tokenVector[_index-1];
-            if (!Match("SLASH")) return null;
-            if (!Match("MTHAN")) return null;
+            if (!Match("SLASH"))
+            {
+                throw new UnexpectedTokenException("SLASH '/' to close <return/>", CurrentToken());
+            }
+            if (!Match("MTHAN"))
+            {
+                 throw new UnexpectedTokenException("MTHAN '>' to close <return/>", CurrentToken());
+            }
             return new()
             {
                 ReturnKeyWord=returnKeyWord

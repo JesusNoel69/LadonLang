@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using LadonLang.Data;
-
 namespace LadonLang.Parser.Models
 {
     public class FunctionStmt: StmtNode
@@ -12,7 +7,7 @@ namespace LadonLang.Parser.Models
         public List<Parameter> Parameters { get; set;} = [];
         public List<Token> ReturnTypes { get; set;} = [];
         public Parameter? OutParameter {get; set;}
-        public BlockStmt Block { get; set; } = null!;
+        public BlockStmt? Block { get; set; } = null!;
     }
     public class Parameter : AstNode
     {

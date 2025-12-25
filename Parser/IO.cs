@@ -1,10 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using LadonLang.Data;
 using LadonLang.Parser.Models;
-
 namespace LadonLang.Parser
 {
     public partial class Parser
@@ -12,13 +7,17 @@ namespace LadonLang.Parser
         // Input ::= "<" input InputOptions? "/>"
         public static StmtNode? Input()
         {
+            int start = _index;
+            string st = token;
+
             if (!Match("LTHAN")) return null;
-            if (!Match("INPUT_KEYWORD")) return null;
-
-            var input = InputOptions(); // optional
-            if (!Match("SLASH")) return null;
-            if (!Match("MTHAN")) return null;
-
+            if (!Match("INPUT_KEYWORD")) { _index = start; token = st; return null; }
+            InputStmt? input = null;
+            input = InputOptions(); // optional
+            if (!Match("SLASH")) 
+                throw new UnexpectedTokenException("SLASH '/' (needed to close <input/>)", CurrentToken());
+            if (!Match("MTHAN")) 
+                throw new UnexpectedTokenException("MTHAN '>' (needed to close <input/>)", CurrentToken());
             return input;
         }
         // InputOptions ::= SetInput | KeyTypeCombo
@@ -26,22 +25,24 @@ namespace LadonLang.Parser
         // KeyTypeCombo ::= (KeyAttr TypeAttr?) | (TypeAttr KeyAttr?)
         public static InputStmt? InputOptions()
         {
-            //_skipSpace();
             // <input/>  → there is no options
             if (_index >= _tokenVector.Count)
-                return null;
+                return new InputStmt();
 
             var t = _tokenVector[_index].TokenType;
 
             // <input set[ident]/>
             if (t=="SET_KEYWORD")
             {
-                return SetInputAttr();
+                var set = SetInputAttr();
+                if (set == null)
+                    throw new UnexpectedTokenException("set[IDENTIFIER]", CurrentToken());
+                return set;
             }
 
-            // <input key='A' ...> o <input type=[key] ...>
+            // <input type=[key] key='A' ...> o <input type=[key] ...>
             bool hasKey = false;
-            bool hasType = false;
+            //bool hasType = false;
             Token? keyInput = null;
             bool typeInput=false;
 
@@ -49,10 +50,14 @@ namespace LadonLang.Parser
             if (t=="KEY_KEYWORD")
             {
                 keyInput=KeyInputAttr();
-                if (keyInput==null) return null;
+                if (keyInput==null)
+                    throw new UnexpectedTokenException("key='CHARACTER'", CurrentToken());
                 hasKey = true;
                 typeInput=TypeInputAttr();
-                if(!typeInput) return null;
+                if (!typeInput)
+                {
+                    throw new UnexpectedTokenException("type=[key]'", CurrentToken());
+                }
                 t = _tokenVector[_index].TokenType;
             }
 
@@ -60,9 +65,12 @@ namespace LadonLang.Parser
             if (t=="TYPE_KEYWORD")
             {
                 typeInput=TypeInputAttr();
-                if (!typeInput) return null;
+                if (!typeInput)
+                {
+                    throw new UnexpectedTokenException("type=[key]'", CurrentToken());
+                }
                 keyInput=KeyInputAttr();
-                hasType = true;
+                //hasType = true;
             }
             else if (!hasKey)
             {
@@ -78,32 +86,23 @@ namespace LadonLang.Parser
 
             return input;
         }
-
        //KeyInputAttr ::= key='A'
         public static Token? KeyInputAttr()
         {
             if (!Match("KEY_KEYWORD")) return null;
-            if(!Match("EQUAL")) return null;
-            if (!Match("CHARACTER"))
-            {
-                return null;
-            }
+            if (!Match("EQUAL")) throw new UnexpectedTokenException("EQUAL '=' after key", CurrentToken());
+            if (!Match("CHARACTER")) throw new UnexpectedTokenException("CHARACTER after 'key='", CurrentToken());
             var token = _tokenVector[_index-1];
-            
             return token;
         }
-
         //TypeInputAttr ::= type=[key]
         public static bool TypeInputAttr()
         {
             if (!Match("TYPE_KEYWORD")) return false;
-
-            if (!Match("EQUAL")) return false;
-            if (!Match("OCORCHETES")) return false;
-
-            if (!Match("KEY_KEYWORD")) return false;
-
-            if (!Match("CCORCHETES")) return false;
+            if (!Match("EQUAL")) throw new UnexpectedTokenException("EQUAL '=' after type", CurrentToken());
+            if (!Match("OCORCHETES")) throw new UnexpectedTokenException("OCORCHETES '[' after 'type='", CurrentToken());
+            if (!Match("KEY_KEYWORD")) throw new UnexpectedTokenException("KEY_KEYWORD into type=[...]", CurrentToken());
+            if (!Match("CCORCHETES")) throw new UnexpectedTokenException("CCORCHETES ']' to close type=[key]", CurrentToken());
             return true;
         }
 
@@ -112,10 +111,10 @@ namespace LadonLang.Parser
         {
             if (!Match("SET_KEYWORD")) return null;
 
-            if (!Match("OCORCHETES")) return null;
-            if (!Match("IDENTIFIER")) return null;
-            var variable = _tokenVector[_index-1];
-            if (!Match("CCORCHETES")) return null;
+            if (!Match("OCORCHETES")) throw new UnexpectedTokenException("OCORCHETES '[' after set", CurrentToken());
+            if (!Match("IDENTIFIER")) throw new UnexpectedTokenException("IDENTIFIER into set[...]", CurrentToken());
+            var variable = _tokenVector[_index - 1];
+            if (!Match("CCORCHETES")) throw new UnexpectedTokenException("CCORCHETES ']' to close set[ident]", CurrentToken());
             var inputStmt = new InputStmt()
             {
                 Key=null,
@@ -124,8 +123,6 @@ namespace LadonLang.Parser
             };
             return inputStmt;
         }
-
-
         // Output ::= "<" output ">" PrintList "</" output ">" | OutputGet
         public static OutputStmt? Output()
         {
@@ -133,29 +130,36 @@ namespace LadonLang.Parser
             string st = token;
             if (!Match("LTHAN")) return null;
             if (!Match("OUTPUT_KEYWORD")) {_index = start; token = st; return null;}
-
             //<output> ... </output>
             if (Match("MTHAN"))
             {
-                var items = PrintList();
-                if (!Match("LTHAN")) { _index = start; token = st; return null; }
-                if (!Match("SLASH")) { _index = start; token = st; return null; }
-                if (!Match("OUTPUT_KEYWORD")) { _index = start; token = st; return null; }
-                if (!Match("MTHAN")) { _index = start; token = st; return null; }
-
-
+                var items = PrintList(); //should be throw an error if it fail
+                if (!Match("LTHAN")) throw new UnexpectedTokenException("LTHAN '<' to close </output>", CurrentToken());
+                if (!Match("SLASH")) throw new UnexpectedTokenException("SLASH '/' to close </output>", CurrentToken());
+                if (!Match("OUTPUT_KEYWORD")) throw new UnexpectedTokenException("OUTPUT_KEYWORD in </output>", CurrentToken());
+                if (!Match("MTHAN")) throw new UnexpectedTokenException("MTHAN '>' at the end of </output>", CurrentToken());
                 var stmt = new OutputStmt();
-                stmt.PrintList.AddRange(items);
+                stmt.PrintList=items;
                 return stmt;
             }
 
             // <output get[ident]/>  (or get[ident]/ if is added)
             Token? getVar = OutputInlineAttrs();
-            if (getVar == null) { _index = start; token = st; return null; }
-
-            if (!Match("SLASH")) { _index = start; token = st; return null; }
-            if (!Match("MTHAN")) { _index = start; token = st; return null; }
-
+            if (getVar == null) { 
+                _index = start; 
+                token = st; 
+                throw new UnexpectedTokenException("get[IDENTIFIER] or '>'", CurrentToken()); 
+            }
+            if (!Match("SLASH")) { 
+                _index = start; 
+                token = st; 
+                throw new UnexpectedTokenException("SLASH '/' to close <output .../>", CurrentToken()); 
+            }
+            if (!Match("MTHAN")) { 
+                _index = start; 
+                token = st; 
+                if (!Match("MTHAN")) throw new UnexpectedTokenException("MTHAN '>' to close <output .../>", CurrentToken()); 
+            }
             return new OutputStmt { GetVariable = getVar };
         }
 
@@ -164,11 +168,10 @@ namespace LadonLang.Parser
         {
             if (!Match("GET_KEYWORD")) return null;
 
-            if (!Match("OCORCHETES")) return null;
-            if (!Match("IDENTIFIER")) return null;
+            if (!Match("OCORCHETES")) throw new UnexpectedTokenException("OCORCHETES '[' after get", CurrentToken());
+            if (!Match("IDENTIFIER")) throw new UnexpectedTokenException("IDENTIFIER into get[...]", CurrentToken());
             var id = _tokenVector[_index - 1];
-            if (!Match("CCORCHETES")) return null;
-
+            if (!Match("CCORCHETES")) throw new UnexpectedTokenException("CCORCHETES ']' to close get[ident]", CurrentToken());
             return id;
         }
         //PrintList ::= Expr ("," Expr)*
@@ -184,185 +187,21 @@ namespace LadonLang.Parser
             var list = new List<Expr>();
             var expr = Expr();
             // PrintList ::= Expr ("," Expr)* ;
-            if (expr == null) return null;
+            if (expr == null)
+                throw new UnexpectedTokenException("Expr in PrintList <output>...</output>", CurrentToken());
             list.Add(expr);
-
             while (Match("COMMA"))
             {
                 expr=Expr();
-                if (expr == null) return null;
-                    list.Add(expr);
+                if (expr == null)
+                {
+                    throw new UnexpectedTokenException("Expr after ',' in PrintList", CurrentToken());
+                }
+                list.Add(expr);
             }
             //verify if smicolon is neeed, because tag close using </output> but has special tokens
             //Match("SEMICOLON");
             return list;
         }
-        /*
-        // Input ::= "<" input InputOptions? "/>"
-        public static bool Input()
-        {
-            if (!Match("LTHAN")) return false;
-            if (!Match("INPUT_KEYWORD")) return false;
-
-            InputOptions(); // opcional
-            System.Console.WriteLine("este: "+token);
-            if (!Match("SLASH")) return false;
-            if (!Match("MTHAN")) return false;
-
-            return true;
-        }
-        // InputOptions ::= SetInput | KeyTypeCombo
-        // SetInput ::= "SET_KEYWORD" "[" IDENTIFIER "]"
-        // KeyTypeCombo ::= (KeyAttr TypeAttr?) | (TypeAttr KeyAttr?)
-        public static bool InputOptions()
-        {
-            //_skipSpace();
-            // <input/>  → there is no options
-            if (_index >= _tokenVector.Count)
-                return true;
-
-            var t = _tokenVector[_index].TokenType;
-
-            // <input set[ident]/>
-            if (t=="SET_KEYWORD")
-            {
-                return SetInputAttr();
-            }
-
-            // <input key='A' ...> o <input type=[key] ...>
-            bool hasKey = false;
-            bool hasType = false;
-
-            // try key first
-            if (t=="KEY_KEYWORD")
-            {
-                if (!KeyInputAttr()) return false;
-                hasKey = true;
-                if(!TypeInputAttr()) return false;
-                //_skipSpace();
-                t = _tokenVector[_index].TokenType;
-            }
-
-            // try type if get
-            if (t=="TYPE_KEYWORD")
-            {
-                //System.Console.WriteLine("debereia entrar aqui");
-                if (!TypeInputAttr()) return false;
-                KeyInputAttr();
-                hasType = true;
-            }
-            else if (!hasKey)
-            {
-                // if has no options 
-                return true;
-            }
-
-            return hasKey || hasType;
-        }
-
-       //KeyInputAttr ::= key='A'
-        public static bool KeyInputAttr()
-        {
-            if (!Match("KEY_KEYWORD")) return false;
-            if(!Match("EQUAL")) return false;
-            if (!Match("CHARACTER"))
-                return false;
-            return true;
-        }
-
-        //TypeInputAttr ::= type=[key]
-        public static bool TypeInputAttr()
-        {
-            if (!Match("TYPE_KEYWORD")) return false;
-
-            if (!Match("EQUAL")) return false;
-            if (!Match("OCORCHETES")) return false;
-
-            if (!Match("KEY_KEYWORD")) return false;
-
-            if (!Match("CCORCHETES")) return false;
-            return true;
-        }
-
-        // set[nombre_variable]
-        public static bool SetInputAttr()
-        {
-            if (!Match("SET_KEYWORD")) return false;
-
-            if (!Match("OCORCHETES")) return false;
-
-            if (!Match("IDENTIFIER")) return false;
-
-            if (!Match("CCORCHETES")) return false;
-
-            return true;
-        }
-
-
-        // Output ::= "<" output ">" PrintList "</" output ">" | OutputGet
-        public static bool Output()
-        {
-            if (!Match("LTHAN")) return false;
-            if (!Match("OUTPUT_KEYWORD")) return false;
-
-            //_skipSpace();
-
-            //<output> ... </output>
-            if (Match("MTHAN"))
-            {
-                if (!PrintList()) return false;
-
-                if (!Match("LTHAN")) return false;
-                if (!Match("SLASH")) return false;
-                if (!Match("OUTPUT_KEYWORD")) return false;
-                if (!Match("MTHAN")) return false;
-
-                return true;
-            }
-
-            // <output get[ident]/>  (or get[ident]/ if is added)
-            if (!OutputInlineAttrs()) return false;
-
-            if (!Match("SLASH")) return false;
-            if (!Match("MTHAN")) return false;
-
-            return true;
-        }
-
-        // OutputInlineAttrs ::=  "GET_KEYWORD" "[" IDENTIFIER "]"
-        public static bool OutputInlineAttrs()
-        {
-            if (Match("GET_KEYWORD"))
-            {
-                if (!Match("OCORCHETES")) return false;
-                if (!Match("IDENTIFIER")) return false;
-                if (!Match("CCORCHETES")) return false;
-                return true;
-            }
-            return false;
-        }
-        //PrintList ::= Expr ("," Expr)*
-        public static bool PrintList()
-        {
-            // </output>
-            if (PeekType(0) == "LTHAN" &&
-                PeekType(1) == "SLASH" &&
-                PeekType(2) == "OUTPUT_KEYWORD")
-            {
-                return true;
-            }
-
-            // PrintList ::= Expr ("," Expr)* ;
-            if (!Expr()) return false;
-
-            while (Match("COMMA"))
-            {
-                if (!Expr()) return false;
-            }
-            Match("SEMICOLON");
-            return true;
-        }
-        */
-
     }
 }
