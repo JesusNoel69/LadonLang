@@ -14,5 +14,6 @@ namespace LadonLang.Parser.Models
         public Token Name { get; set; } = null!;
         public Token? Type{get; set;}
         public bool IsOutParameter {get; set;} = false;
+        public int Position {get; set;}
     }
 }

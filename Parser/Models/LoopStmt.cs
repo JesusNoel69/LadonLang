@@ -4,7 +4,7 @@ namespace LadonLang.Parser.Models
     public class LoopStmt : StmtNode
     {
         public Token? Name {get; set;}
-        public LoopHeader LoopHeader{get; set;}
+        public LoopHeader? LoopHeader{get; set;}
         public BlockStmt? Block { get; set;}
     }
     public class LoopHeader : AstNode

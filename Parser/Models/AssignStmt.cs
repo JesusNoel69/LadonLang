@@ -1,7 +1,7 @@
 using LadonLang.Data;
 namespace LadonLang.Parser.Models
 {
-     public class AssignStmt : StmtNode
+    public class AssignStmt : StmtNode
     {
         public Token Variable {get;set;} = null!;
         public Token AssignOperator { get; set; } = null!; // "="

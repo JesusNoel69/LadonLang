@@ -98,12 +98,12 @@ namespace LadonLang.Parser
             }
             return false;
         }
-        public static BlockStmt Parse(List<Token> tokens)
+        public static  ProgramNode Parse(List<Token> tokens)
         {
             _tokenVector = tokens;
             _index = 0;
             token = _tokenVector.Count > 0 ? _tokenVector[0].TokenType : "";
-            var program = new BlockStmt();
+            var program = new ProgramNode();
             while (_index < _tokenVector.Count)
             {
                 var stmt = Statement();

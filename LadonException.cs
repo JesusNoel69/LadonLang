@@ -25,5 +25,19 @@ namespace LadonLang
         {
         }
     }
-
+    public class DuplicateSymbolException : ParserExeption
+    {
+        public DuplicateSymbolException(string name, Token token)
+            : base($"Duplicated symbol: '{name}'", token) { }
+    }
+    public class UndeclaredSymbolException : ParserExeption
+    {
+        public UndeclaredSymbolException(Token token)
+            : base("Undeclared identifier", token) { }
+    }
+    public class TypeMismatchException : ParserExeption
+    {
+        public TypeMismatchException(string message, Token token)
+            : base(message, token) { }
+    }
 }

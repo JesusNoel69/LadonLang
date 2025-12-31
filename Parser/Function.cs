@@ -27,7 +27,7 @@ namespace LadonLang.Parser
             var block = BlockOfFn();
             ExpectDouble("SLASH", "MTHAN", "/>");
             var outParameter = parameters?.FirstOrDefault(x=> x.IsOutParameter==true);
-            var parameterWithoutOut = parameters?.Where(x=> x.IsOutParameter==false).ToList();
+            var parameterWithoutOut = parameters?.Where(x=> x.IsOutParameter==false).OrderBy(x=>x.Position).ToList();
             return new FunctionStmt
             {
                 Block=block,
@@ -42,20 +42,22 @@ namespace LadonLang.Parser
         public static List<Parameter>? ParameterList()
         {
             var parameters = new List<Parameter>();
+            int parameterPosition = 0;
             if (PeekType(0) == "CPARENTHESIS") return parameters;//maybe this should be null
-            var firstParameter = Parameter();
+            var firstParameter = Parameter(parameterPosition++);
             if (firstParameter==null) return null;
+
             parameters.Add(firstParameter);
             while (Match("COMMA"))
             {
-                var nextParameter = Parameter();
+                var nextParameter = Parameter(parameterPosition++);
                 if (nextParameter==null) return null;
                 parameters.Add(nextParameter);
             }
             return parameters;
         }
         // Parameter ::= ("out")? Identifier ExplicitType?
-        static Parameter? Parameter()
+        static Parameter? Parameter(int parameterPosition)
         {
             bool isOut = Match("OUT_KEYWORD");
             if (!Match("IDENTIFIER"))
@@ -74,7 +76,8 @@ namespace LadonLang.Parser
             {
                 IsOutParameter=isOut,
                 Type=type,
-                Name=parameterName
+                Name=parameterName,
+                Position=parameterPosition
             };
         }
         //ReturnTypesList ::= "->" Type ","? Return_types_list|epsilon

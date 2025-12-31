@@ -2,6 +2,8 @@ using System.Runtime.InteropServices;
 using LadonLang.Data;
 using LadonLang.Lexer;
 using LadonLang.Parser;
+using LadonLang.Parser.Models;
+using LadonLang.Semantic;
 /*
 foreach (var row in TransitonMatrix.Matrix)
 {
@@ -14,7 +16,7 @@ foreach (var row in TransitonMatrix.Matrix)
 */
 string? line;
 string currentDirectory="";
-string archiveName = "testFile.ll";
+string archiveName = "Calls.ll";
 int numLine=1;
 bool next=true;
 currentDirectory=Directory.GetCurrentDirectory();
@@ -22,7 +24,7 @@ currentDirectory=currentDirectory.Replace("\\", "/");
 currentDirectory+="/Test";
 StreamReader archive = new(@$"{currentDirectory}/{archiveName}");
 Console.WriteLine("el directtorio es: "+currentDirectory);
-int numCol=1; 
+int numCol=1;
 while((line = archive.ReadLine())!= null ){
     next=Lexer.Scan(line,numLine++, numCol++);
 }
@@ -35,5 +37,10 @@ foreach (var item in Lexer.TokenVector.Where(x=>x.TokenType!="SPACE"))//Lexer.To
 }*/
 
 var vector = Lexer.TokenVector.Where(x=>x.TokenType!="SPACE").ToList();
-var parserProgram = Parser.Parse(vector);
-//Console.WriteLine( parserProgram!=null);
+var programNode = Parser.Parse(vector);
+/*foreach (var item in programNode.Statements)
+{
+    Console.WriteLine(item);
+}*/
+var Semantic = new SemanticAnalyzer();
+Semantic.Analyze(programNode);

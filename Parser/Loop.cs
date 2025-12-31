@@ -33,7 +33,7 @@ namespace LadonLang.Parser
             return new LoopStmt
             {
                 Name = nameTok,
-                LoopHeader = header ?? new LoopHeader(),
+                LoopHeader = header,
                 Block = block
             };
         }
