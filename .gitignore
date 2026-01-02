@@ -3,6 +3,8 @@ bin/
 obj/
 LadonLang/bin/
 LadonLang/obj/
+#Ignore unnecesary files
+Documentation.txt
 
 # Ignore all dll and exe files
 *.dll
