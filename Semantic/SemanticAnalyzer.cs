@@ -81,7 +81,6 @@ namespace LadonLang.Semantic
         }
         private void ValidateInitializerTypes(VariableSymbol sym, VarInitializerNode init)
         {
-            //System.Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(sym));
             var exprs = init.Expressions;
             // infer kind of every expresion
             var exprTypes = exprs.Select(VisitExpr).ToList();

@@ -33,7 +33,6 @@ namespace LadonLang.CodeGenerator
                     : $"{type} {identifier} = {initText};";
                 //globalBlock+=line+"\n";
                 sb.AppendLine(line);
-                Console.WriteLine(line);
             });
             return sb.ToString().TrimEnd();
         }

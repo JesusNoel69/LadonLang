@@ -28,7 +28,6 @@ namespace LadonLang.Lexer
         
         public static bool Scan(string? input, int line, int column)
         {
-            //Console.WriteLine("¡" + input + "¡");
             if (input == null) return false;
 
             input += " "; // end of line
@@ -87,10 +86,8 @@ namespace LadonLang.Lexer
                     _token = "";
                     continue; 
                 }
-                Console.WriteLine($"Antes column: {_col} state: {_state} input: {ch}");
                 _col = SetColumn(_col, ch);
                 _state = TransitonMatrix.Matrix[_state][_col];
-                Console.WriteLine($"Despues column: {_col} state: {_state} input: {ch}");
                 bool isDelimiter = _delimiters.Contains(ch);
                 if (ErrorHandler(_state))
                     return false;
@@ -211,7 +208,6 @@ namespace LadonLang.Lexer
         }
         public static string DelimiterType(char character)
         {
-            //System.Console.WriteLine("es: "+character+"¡");
             foreach (DelimiterSymbols s in Enum.GetValues(typeof(DelimiterSymbols)))
             {
                 if ((char)s == character)

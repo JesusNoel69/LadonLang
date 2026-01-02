@@ -22,7 +22,6 @@ namespace LadonLang.Semantic
                 */
                 var allowed = d.TypeArguments?.Select(ToTypeRef).ToList()
                         ?? new List<TypeRef>();
-                //Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(allowed));
                 var sym = new VariableSymbol(
                     Name: name,
                     DeclToken: nameTok,

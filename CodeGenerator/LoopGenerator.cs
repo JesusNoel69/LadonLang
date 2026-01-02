@@ -52,7 +52,6 @@ namespace LadonLang.CodeGenerator
                 }
             }
             //sb.AppendLine("}");
-            Console.WriteLine(sb.ToString());
             return sb.ToString();
         }
         private string RenderForInit(Expr init)
