@@ -1,10 +1,10 @@
 FN hola()=<
 />
-FN sumar(parameter1, out parameter2)=<
+FN sumar(parameter1<int>, out parameter2)=<
 />
 FN f(parameter1, parameter2, parameter3)=<
 />
-var n;
+var n<int> =0;
 var x=1;
 var a=1;
 var b=2;

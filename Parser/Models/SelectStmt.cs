@@ -5,14 +5,9 @@ namespace LadonLang.Parser.Models
     {
         public Token? Name {get; set;}
         //"TRUE_KEYWORD", "FALSE_KEYWORD", "INTEGER_NUMBER", "FLOAT_NUMBER", "CHARACTER", "STRING", "IDENTIFIER"
-        public Token Value { get; set; }
+        public Token Value { get; set; } //should be a expr in future
         public List<OptionStmt> Options { get; set;} =[];
     }
-    /*public class CaseValue
-    {
-        public Token Token { get; }
-        public CaseValue(Token token) => Token = token;
-    }*/
     public class OptionStmt
     {
         public bool IsDefault {get; set;} = false;

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
 using LadonLang.Data;
@@ -11,6 +12,10 @@ namespace LadonLang.Semantic
     {
         private FunctionSymbol? _currentFunction;
         private SymbolTable _symbols = new();
+        public SymbolTable GetSymbolTable()
+        {
+            return _symbols;
+        }
         public void Analyze(ProgramNode program)
         {
             foreach (var stmt in program.Statements)
