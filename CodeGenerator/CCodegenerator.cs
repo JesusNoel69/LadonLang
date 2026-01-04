@@ -22,7 +22,6 @@ namespace LadonLang.CodeGenerator
         string path;
         string runtime = "struct LadonRT{char ch;};";
         //string directives = $"#include <cstdint>\n#include <string>\n#include <vector>\n#include <iostream>\nusing namespace std;\n";
-        string globalBlock="";
         public void TraverseAst()
         {
             foreach (var statement in program.Statements)
@@ -32,10 +31,13 @@ namespace LadonLang.CodeGenerator
                 else
                     mainSb.AppendLine(RenderStmt(statement));
             }
-
-            using var file = new StreamWriter(@$"{path}/Out/.cpp");
+            var outDir = System.IO.Path.Combine(path, "");
+            Directory.CreateDirectory(outDir);
+            var outFile = Path.Combine(outDir, "main.cpp");
+            using var file = new StreamWriter(outFile);
 
             file.WriteLine("#include <cstdint>");
+            file.WriteLine("#include <cstdlib>");
             file.WriteLine("#include <string>");
             file.WriteLine("#include <vector>");
             file.WriteLine("#include <iostream>");
@@ -52,6 +54,7 @@ namespace LadonLang.CodeGenerator
             file.WriteLine("int main() {");
             file.WriteLine("LadonRT ladon;");//instance of runtime
             file.WriteLine(mainSb.ToString());
+            file.WriteLine(" cout << \"Press Enter to exit...\";cin.get();");
             file.WriteLine("return 0;");
             file.WriteLine("}");
             file.WriteLine();

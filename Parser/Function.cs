@@ -27,6 +27,13 @@ namespace LadonLang.Parser
             var block = BlockOfFn();
             ExpectDouble("SLASH", "MTHAN", "/>");
             var outParameter = parameters?.FirstOrDefault(x=> x.IsOutParameter==true);
+            //if ->type is used to specify return value for a function it reeplace out value
+            //for composed type not implemented yet
+            if (outParameter != null && returnTpes?.Count>0)
+            {
+                var first = returnTpes?[0];
+                outParameter.Type = first;
+            }
             var parameterWithoutOut = parameters?.Where(x=> x.IsOutParameter==false).OrderBy(x=>x.Position).ToList();
             return new FunctionStmt
             {

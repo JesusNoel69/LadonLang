@@ -131,8 +131,9 @@ namespace LadonLang.Parser
             if (!Match("LTHAN")) return null;
             if (!Match("OUTPUT_KEYWORD")) {_index = start; token = st; return null;}
             //<output> ... </output>
-            if (Match("MTHAN"))
+            if (PeekType(0) == "MTHAN")
             {
+                Match("MTHAN");
                 var items = PrintList(); //should be throw an error if it fail
                 if (!Match("LTHAN")) throw new UnexpectedTokenException("LTHAN '<' to close </output>", CurrentToken());
                 if (!Match("SLASH")) throw new UnexpectedTokenException("SLASH '/' to close </output>", CurrentToken());
@@ -200,7 +201,7 @@ namespace LadonLang.Parser
                 list.Add(expr);
             }
             //verify if smicolon is neeed, because tag close using </output> but has special tokens
-            //Match("SEMICOLON");
+            Match("SEMICOLON");
             return list;
         }
     }
