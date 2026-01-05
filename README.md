@@ -235,7 +235,7 @@ fibonacci(10, r);
 
 #### factorial:
 
-![Imagen de consola de el factorial de un numero.](images/Factorial-number-example.png)
+![Imagen de consola de el factorial de un numero.](images/factorial-number-example.png)
 
 ```
 FN factorial(n<int>, out result<int>)=<
